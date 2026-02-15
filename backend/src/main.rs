@@ -1,4 +1,4 @@
-use axum::{Extension, Router};
+use axum::Extension;
 use backend::application::use_cases::create_service_order::CreateServiceOrderUseCase;
 use backend::application::use_cases::promote_user::PromoteUserUseCase;
 use backend::application::use_cases::register_user::RegisterUserUseCase;
@@ -56,12 +56,7 @@ async fn main() {
         jwt_service,
     });
 
-    let app = Router::new()
-        .route(
-            "/",
-            axum::routing::get(|| async { "Social Security Motocycle API" }),
-        )
-        .layer(Extension(app_state));
+    let app = backend::infrastructure::http::routes::create_router().layer(Extension(app_state)); // Inject state. The handlers use Extension<Arc<AppState>>.
 
     let port = std::env::var("PORT")
         .unwrap_or_else(|_| "3000".to_string())
