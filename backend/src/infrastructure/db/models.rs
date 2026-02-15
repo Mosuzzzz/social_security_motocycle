@@ -40,6 +40,7 @@ pub enum ServiceOrderStatusEnum {
     Repairing,
     Completed,
     Cancelled,
+    Paid,
 }
 
 #[derive(Queryable, Selectable, Debug, Clone, Serialize, Deserialize)]

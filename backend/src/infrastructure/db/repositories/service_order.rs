@@ -29,6 +29,7 @@ impl ServiceOrderRepository {
             OrderStatus::Repairing => ServiceOrderStatusEnum::Repairing,
             OrderStatus::Completed => ServiceOrderStatusEnum::Completed,
             OrderStatus::Cancelled => ServiceOrderStatusEnum::Cancelled,
+            OrderStatus::Paid => ServiceOrderStatusEnum::Paid,
         };
 
         // Convert f64 to BigDecimal for DB
@@ -74,6 +75,7 @@ impl ServiceOrderRepository {
             OrderStatus::Repairing => ServiceOrderStatusEnum::Repairing,
             OrderStatus::Completed => ServiceOrderStatusEnum::Completed,
             OrderStatus::Cancelled => ServiceOrderStatusEnum::Cancelled,
+            OrderStatus::Paid => ServiceOrderStatusEnum::Paid,
         };
 
         // Convert f64 to BigDecimal for DB
@@ -101,6 +103,7 @@ impl ServiceOrderRepository {
             ServiceOrderStatusEnum::Repairing => OrderStatus::Repairing,
             ServiceOrderStatusEnum::Completed => OrderStatus::Completed,
             ServiceOrderStatusEnum::Cancelled => OrderStatus::Cancelled,
+            ServiceOrderStatusEnum::Paid => OrderStatus::Paid,
         };
 
         // Convert BigDecimal to f64

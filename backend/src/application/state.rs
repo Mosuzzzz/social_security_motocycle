@@ -1,5 +1,6 @@
 use crate::application::use_cases::create_service_order::CreateServiceOrderUseCase;
 use crate::application::use_cases::login::LoginUseCase;
+use crate::application::use_cases::process_payment::ProcessPaymentUseCase;
 use crate::application::use_cases::promote_user::PromoteUserUseCase;
 use crate::application::use_cases::register_user::RegisterUserUseCase;
 use crate::infrastructure::security::jwt::service::JwtService;
@@ -10,5 +11,6 @@ pub struct AppState {
     pub promote_user_use_case: PromoteUserUseCase,
     pub create_service_order_use_case: CreateServiceOrderUseCase,
     pub login_use_case: LoginUseCase,
+    pub process_payment_use_case: ProcessPaymentUseCase,
     pub jwt_service: JwtService,
 }

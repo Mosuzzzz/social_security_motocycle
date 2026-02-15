@@ -6,6 +6,7 @@ pub enum OrderStatus {
     Repairing,
     Completed,
     Cancelled,
+    Paid,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,7 +16,7 @@ pub struct ServiceOrder {
     pub customer_id: i32,
     pub status: OrderStatus,
     pub total_price: f64, // Should use a proper Money type
-    // In DDD, we might use Value Objects for ID types too
+                          // In DDD, we might use Value Objects for ID types too
 }
 
 impl ServiceOrder {
