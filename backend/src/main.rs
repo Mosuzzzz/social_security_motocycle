@@ -26,7 +26,7 @@ struct AppState {
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
-    println!("Hello, world!");
+
 
     let pool = establish_connection();
     println!("Database connection established!");
