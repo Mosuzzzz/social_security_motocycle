@@ -5,3 +5,4 @@ backend/.env
 backend/seed.sql
 docker-compose.yml
 backend/postman_collection.json
+backend/target/
