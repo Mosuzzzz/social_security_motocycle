@@ -1,0 +1,6 @@
+Implementation Plan.md
+Database.md
+SRS.md
+backend/.env
+backend/seed.sql
+docker-compose.yml

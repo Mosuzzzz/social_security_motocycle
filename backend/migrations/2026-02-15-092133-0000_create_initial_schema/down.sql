@@ -1,0 +1,13 @@
+DROP TABLE IF EXISTS user_line_accounts;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS payments;
+DROP TABLE IF EXISTS repair_logs;
+DROP TABLE IF EXISTS service_items;
+DROP TABLE IF EXISTS service_orders;
+DROP TABLE IF EXISTS motorcycles;
+DROP TABLE IF EXISTS users;
+DROP TYPE IF EXISTS notification_status_enum;
+DROP TYPE IF EXISTS notification_channel_enum;
+DROP TYPE IF EXISTS payment_status_enum;
+DROP TYPE IF EXISTS service_order_status;
+DROP TYPE IF EXISTS user_role;
