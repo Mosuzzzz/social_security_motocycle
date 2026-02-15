@@ -164,6 +164,7 @@ dependencies = [
  "diesel",
  "diesel-derive-enum",
  "dotenvy",
+ "http",
  "jsonwebtoken",
  "reqwest",
  "serde",

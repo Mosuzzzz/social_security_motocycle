@@ -6,4 +6,5 @@ backend/seed.sql
 docker-compose.yml
 backend/postman_collection.json
 backend/target/
+fontend/node_modules
 motorcycle_api_collection.json

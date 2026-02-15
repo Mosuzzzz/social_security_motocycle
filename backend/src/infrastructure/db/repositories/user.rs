@@ -66,6 +66,20 @@ impl UserRepository {
         Ok(result.map(|model| self.map_model_to_entity(model)))
     }
 
+    pub async fn list_users(&self) -> Result<Vec<User>, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+
+        let results = users::table
+            .select(UserModel::as_select())
+            .load::<UserModel>(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        Ok(results
+            .into_iter()
+            .map(|model| self.map_model_to_entity(model))
+            .collect())
+    }
+
     pub async fn update_user(&self, user: User) -> Result<User, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
 

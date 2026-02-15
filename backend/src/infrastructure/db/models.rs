@@ -65,3 +65,13 @@ pub struct NewServiceOrder {
     pub total_price: bigdecimal::BigDecimal,
     pub created_by: i32,
 }
+#[derive(Queryable, Selectable, Debug, Clone, Serialize, Deserialize)]
+#[diesel(table_name = crate::infrastructure::db::schema::motorcycles)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct MotorcycleModel {
+    pub bike_id: i32,
+    pub brand: String,
+    pub model: String,
+    pub license_plate: String,
+    pub user_id: i32,
+}

@@ -97,6 +97,38 @@ impl ServiceOrderRepository {
         Ok(self.map_model_to_entity(result))
     }
 
+    pub async fn list_orders(&self) -> Result<Vec<ServiceOrder>, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+
+        let results = service_orders::table
+            .select(ServiceOrderModel::as_select())
+            .load::<ServiceOrderModel>(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        Ok(results
+            .into_iter()
+            .map(|model| self.map_model_to_entity(model))
+            .collect())
+    }
+
+    pub async fn list_orders_for_customer(
+        &self,
+        customer_id: i32,
+    ) -> Result<Vec<ServiceOrder>, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+
+        let results = service_orders::table
+            .filter(service_orders::customer_id.eq(customer_id))
+            .select(ServiceOrderModel::as_select())
+            .load::<ServiceOrderModel>(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        Ok(results
+            .into_iter()
+            .map(|model| self.map_model_to_entity(model))
+            .collect())
+    }
+
     fn map_model_to_entity(&self, model: ServiceOrderModel) -> ServiceOrder {
         let status = match model.status {
             ServiceOrderStatusEnum::Booked => OrderStatus::Booked,
