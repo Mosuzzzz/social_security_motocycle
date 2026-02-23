@@ -80,6 +80,36 @@ impl UserRepository {
             .collect())
     }
 
+    pub async fn find_admins(&self) -> Result<Vec<User>, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+
+        let results = users::table
+            .filter(users::role.eq(UserRoleEnum::Admin))
+            .select(UserModel::as_select())
+            .load::<UserModel>(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        Ok(results
+            .into_iter()
+            .map(|model| self.map_model_to_entity(model))
+            .collect())
+    }
+
+    pub async fn find_mechanics(&self) -> Result<Vec<User>, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+
+        let results = users::table
+            .filter(users::role.eq(UserRoleEnum::Mechanic))
+            .select(UserModel::as_select())
+            .load::<UserModel>(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        Ok(results
+            .into_iter()
+            .map(|model| self.map_model_to_entity(model))
+            .collect())
+    }
+
     pub async fn update_user(&self, user: User) -> Result<User, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
 

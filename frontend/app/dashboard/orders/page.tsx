@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
+import { useRouter } from "next/navigation";
 import {
     FileText,
     Wrench,
@@ -12,7 +14,9 @@ import {
     Search,
     ChevronRight,
     Clock,
-    MoreVertical
+    MoreVertical,
+    Eye,
+    Send
 } from "lucide-react";
 
 interface ServiceOrder {
@@ -25,6 +29,9 @@ interface ServiceOrder {
 
 export default function ServiceOrdersManagementPage() {
     const { user } = useAuth();
+    const { showToast } = useToast();
+    const router = useRouter();
+    const isMechanic = user?.role === "Mechanic";
     const [orders, setOrders] = useState<ServiceOrder[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -42,24 +49,37 @@ export default function ServiceOrdersManagementPage() {
     };
 
     useEffect(() => {
-        if (user?.role === "Admin" || user?.role === "Mechanic") {
+        if (user) {
             fetchOrders();
         }
     }, [user]);
 
-    const updateStatus = async (orderId: number, newStatus: string) => {
+    const updateStatus = async (orderId: number, newStatus: string, price?: number) => {
         try {
             await apiFetch("/api/orders", {
                 method: "PUT",
                 body: JSON.stringify({
                     order_id: orderId,
                     status: newStatus,
+                    total_price: price
                 }),
             });
             fetchOrders();
-            setSelectedOrder(null);
+            showToast(`Order status updated to ${newStatus}`, "success");
         } catch (err: unknown) {
-            alert((err as Error).message || "Failed to update status");
+            showToast((err as Error).message || "Failed to update status", "error");
+        }
+    };
+
+    const handleComplete = (orderId: number) => {
+        const priceStr = prompt("Enter total service price (฿):", "0");
+        if (priceStr !== null) {
+            const price = parseFloat(priceStr);
+            if (isNaN(price)) {
+                showToast("Invalid price entered", "error");
+                return;
+            }
+            updateStatus(orderId, "Completed", price);
         }
     };
 
@@ -132,27 +152,33 @@ export default function ServiceOrdersManagementPage() {
                                             ฿{order.total_price.toLocaleString()}
                                         </td>
                                         <td className="px-8 py-6 text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                {order.status === "Booked" && (
+                                            {isMechanic && (
+                                                <div className="flex items-center justify-end gap-2">
                                                     <button
-                                                        onClick={() => updateStatus(order.id, "Repairing")}
-                                                        className="px-3 py-1.5 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 rounded-lg text-xs font-bold transition-all"
+                                                        onClick={() => router.push(`/dashboard/orders/${order.id}`)}
+                                                        className="px-3 py-1.5 bg-white/5 text-zinc-300 hover:bg-white/10 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
                                                     >
-                                                        Start Repair
+                                                        <Eye size={14} />
+                                                        View Details
                                                     </button>
-                                                )}
-                                                {order.status === "Repairing" && (
-                                                    <button
-                                                        onClick={() => updateStatus(order.id, "Completed")}
-                                                        className="px-3 py-1.5 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 rounded-lg text-xs font-bold transition-all"
-                                                    >
-                                                        Complete
-                                                    </button>
-                                                )}
-                                                <button className="p-2 hover:bg-white/5 rounded-lg text-zinc-500 hover:text-white transition-all">
-                                                    <MoreVertical size={16} />
-                                                </button>
-                                            </div>
+                                                    {order.status === "Booked" && (
+                                                        <button
+                                                            onClick={() => updateStatus(order.id, "Repairing")}
+                                                            className="px-3 py-1.5 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 rounded-lg text-xs font-bold transition-all"
+                                                        >
+                                                            Start Repair
+                                                        </button>
+                                                    )}
+                                                    {order.status === "Repairing" && (
+                                                        <button
+                                                            onClick={() => handleComplete(order.id)}
+                                                            className="px-3 py-1.5 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 rounded-lg text-xs font-bold transition-all"
+                                                        >
+                                                            Complete
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))
@@ -168,9 +194,11 @@ export default function ServiceOrdersManagementPage() {
 function StatusBadge({ status }: { status: string }) {
     const configs: Record<string, { color: string; icon: React.ReactNode }> = {
         Booked: { color: "bg-zinc-500/10 text-zinc-400 ring-zinc-500/20", icon: <Clock size={12} /> },
-        Repairing: { color: "bg-indigo-500/10 text-indigo-400 ring-indigo-500/20", icon: <Wrench size={12} /> },
-        Completed: { color: "bg-amber-500/10 text-amber-400 ring-amber-500/20", icon: <CheckCircle2 size={12} /> },
-        Paid: { color: "bg-emerald-500/10 text-emerald-400 ring-emerald-400/20", icon: <CheckCircle2 size={12} /> },
+        ReviewPending: { color: "bg-violet-500/10 text-violet-400 ring-violet-500/20", icon: <Clock size={12} /> },
+        OfferSent: { color: "bg-indigo-500/10 text-indigo-400 ring-indigo-500/20", icon: <Send size={12} /> },
+        Repairing: { color: "bg-amber-500/10 text-amber-400 ring-amber-500/20", icon: <Wrench size={12} /> },
+        Completed: { color: "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20", icon: <CheckCircle2 size={12} /> },
+        Paid: { color: "bg-blue-500/10 text-blue-400 ring-blue-500/20", icon: <CheckCircle2 size={12} /> },
         Cancelled: { color: "bg-red-500/10 text-red-400 ring-red-500/20", icon: <XCircle size={12} /> },
     };
 

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import {
     Users,
     UserPlus,
@@ -27,6 +28,7 @@ export default function UserManagementPage() {
     const [error, setError] = useState("");
     const [search, setSearch] = useState("");
     const { user: currentUser } = useAuth();
+    const { showToast } = useToast();
 
     const fetchUsers = async () => {
         try {
@@ -43,16 +45,16 @@ export default function UserManagementPage() {
         fetchUsers();
     }, []);
 
-    const promoteToMechanic = async (userId: number) => {
+    const changeRole = async (userId: number, role: "Mechanic" | "Customer") => {
         try {
             await apiFetch("/api/promote", {
                 method: "POST",
-                body: JSON.stringify({ user_id: userId, new_role: "Mechanic" }),
+                body: JSON.stringify({ user_id: userId, target_role: role }),
             });
-            // Refresh list
             fetchUsers();
+            showToast(`User role updated to ${role}`, "success");
         } catch (err: unknown) {
-            alert((err as Error).message || "Promotion failed");
+            showToast((err as Error).message || `Failed to change role to ${role}`, "error");
         }
     };
 
@@ -120,7 +122,7 @@ export default function UserManagementPage() {
                                         <td className="px-8 py-6">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center font-bold text-zinc-300 border border-white/10">
-                                                    {u.name[0].toUpperCase()}
+                                                    {u.name?.charAt(0).toUpperCase() || "?"}
                                                 </div>
                                                 <div>
                                                     <div className="font-bold text-white group-hover:text-indigo-400 transition-colors">{u.name}</div>
@@ -145,7 +147,7 @@ export default function UserManagementPage() {
                                         <td className="px-8 py-6 text-right">
                                             {u.role === "Customer" && (
                                                 <button
-                                                    onClick={() => promoteToMechanic(u.id)}
+                                                    onClick={() => changeRole(u.id, "Mechanic")}
                                                     className="px-4 py-2 bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 inline-flex items-center gap-2 active:scale-95"
                                                 >
                                                     <Shield size={14} />
@@ -153,9 +155,17 @@ export default function UserManagementPage() {
                                                 </button>
                                             )}
                                             {u.role === "Mechanic" && (
-                                                <div className="text-zinc-500 text-xs font-medium inline-flex items-center gap-1">
-                                                    <Check size={14} className="text-indigo-500" />
-                                                    Staff Member
+                                                <div className="flex items-center justify-end gap-3">
+                                                    <div className="text-zinc-500 text-xs font-medium inline-flex items-center gap-1">
+                                                        <Check size={14} className="text-indigo-500" />
+                                                        Staff Member
+                                                    </div>
+                                                    <button
+                                                        onClick={() => changeRole(u.id, "Customer")}
+                                                        className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[10px] font-bold rounded-lg transition-all border border-red-500/20"
+                                                    >
+                                                        Unregister Mechanic
+                                                    </button>
                                                 </div>
                                             )}
                                             {u.role === "Admin" && u.id !== currentUser?.user_id && (

@@ -1,9 +1,9 @@
-use crate::domain::service::entity::{OrderStatus, ServiceOrder};
+use crate::domain::service::entity::{OrderStatus, ServiceItem, ServiceOrder};
 use crate::infrastructure::db::connection::DbPool;
 use crate::infrastructure::db::models::{
-    NewServiceOrder, ServiceOrderModel, ServiceOrderStatusEnum,
+    NewServiceOrder, ServiceItemModel, ServiceOrderModel, ServiceOrderStatusEnum,
 };
-use crate::infrastructure::db::schema::service_orders;
+use crate::infrastructure::db::schema::{service_items, service_orders};
 use bigdecimal::{BigDecimal, FromPrimitive};
 use diesel::prelude::*;
 
@@ -26,6 +26,8 @@ impl ServiceOrderRepository {
 
         let status_enum = match order.status {
             OrderStatus::Booked => ServiceOrderStatusEnum::Booked,
+            OrderStatus::ReviewPending => ServiceOrderStatusEnum::ReviewPending,
+            OrderStatus::OfferSent => ServiceOrderStatusEnum::OfferSent,
             OrderStatus::Repairing => ServiceOrderStatusEnum::Repairing,
             OrderStatus::Completed => ServiceOrderStatusEnum::Completed,
             OrderStatus::Cancelled => ServiceOrderStatusEnum::Cancelled,
@@ -52,17 +54,40 @@ impl ServiceOrderRepository {
         Ok(self.map_model_to_entity(result))
     }
 
-    pub async fn find_by_id(&self, order_id: i32) -> Result<Option<ServiceOrder>, String> {
+    pub async fn find_by_id(&self, order_id_val: i32) -> Result<Option<ServiceOrder>, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
 
-        let result = service_orders::table
-            .find(order_id)
+        let order_model = service_orders::table
+            .find(order_id_val)
             .select(ServiceOrderModel::as_select())
             .first::<ServiceOrderModel>(&mut conn)
             .optional()
             .map_err(|e| e.to_string())?;
 
-        Ok(result.map(|model| self.map_model_to_entity(model)))
+        match order_model {
+            Some(model) => {
+                let items_models = service_items::table
+                    .filter(service_items::order_id.eq(order_id_val))
+                    .select(ServiceItemModel::as_select())
+                    .load::<ServiceItemModel>(&mut conn)
+                    .map_err(|e| e.to_string())?;
+
+                let items = items_models
+                    .into_iter()
+                    .map(|m| ServiceItem {
+                        id: Some(m.item_id),
+                        order_id: m.order_id,
+                        description: m.description,
+                        price: m.price.to_string().parse::<f64>().unwrap_or(0.0),
+                    })
+                    .collect();
+
+                let mut entity = self.map_model_to_entity(model);
+                entity.items = items;
+                Ok(Some(entity))
+            }
+            None => Ok(None),
+        }
     }
 
     pub async fn update_order(&self, order: ServiceOrder) -> Result<ServiceOrder, String> {
@@ -72,6 +97,8 @@ impl ServiceOrderRepository {
 
         let status_enum = match order.status {
             OrderStatus::Booked => ServiceOrderStatusEnum::Booked,
+            OrderStatus::ReviewPending => ServiceOrderStatusEnum::ReviewPending,
+            OrderStatus::OfferSent => ServiceOrderStatusEnum::OfferSent,
             OrderStatus::Repairing => ServiceOrderStatusEnum::Repairing,
             OrderStatus::Completed => ServiceOrderStatusEnum::Completed,
             OrderStatus::Cancelled => ServiceOrderStatusEnum::Cancelled,
@@ -132,6 +159,8 @@ impl ServiceOrderRepository {
     fn map_model_to_entity(&self, model: ServiceOrderModel) -> ServiceOrder {
         let status = match model.status {
             ServiceOrderStatusEnum::Booked => OrderStatus::Booked,
+            ServiceOrderStatusEnum::ReviewPending => OrderStatus::ReviewPending,
+            ServiceOrderStatusEnum::OfferSent => OrderStatus::OfferSent,
             ServiceOrderStatusEnum::Repairing => OrderStatus::Repairing,
             ServiceOrderStatusEnum::Completed => OrderStatus::Completed,
             ServiceOrderStatusEnum::Cancelled => OrderStatus::Cancelled,
@@ -148,6 +177,7 @@ impl ServiceOrderRepository {
             customer_id: model.customer_id,
             status,
             total_price,
+            items: Vec::new(),
         }
     }
 }

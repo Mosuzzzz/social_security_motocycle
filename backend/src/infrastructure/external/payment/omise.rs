@@ -14,7 +14,10 @@ pub struct OmiseGateway {
 struct OmiseChargeRequest {
     amount: i64,
     currency: String,
-    card: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    card: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    source: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -26,6 +29,7 @@ struct OmiseChargeResponse {
     amount: i64,
     currency: String,
     failure_message: Option<String>,
+    source: Option<serde_json::Value>,
 }
 
 impl OmiseGateway {
@@ -53,10 +57,20 @@ impl PaymentGateway for OmiseGateway {
         // Omise expects amount in cents (integer)
         let amount_cents = (amount * 100.0) as i64;
 
+        // If token starts with tok_, it's a card. If src_, it's a source (PromptPay)
+        let (card, source) = if token.starts_with("tok_") {
+            (Some(token), None)
+        } else if token.starts_with("src_") {
+            (None, Some(token))
+        } else {
+            return Err("Invalid token format".to_string());
+        };
+
         let request = OmiseChargeRequest {
             amount: amount_cents,
             currency: currency.clone(),
-            card: token,
+            card,
+            source,
         };
 
         let response = self
@@ -94,6 +108,7 @@ impl PaymentGateway for OmiseGateway {
             amount: amount_float,
             currency: charge_data.currency,
             status,
+            details: charge_data.source,
         })
     }
 }

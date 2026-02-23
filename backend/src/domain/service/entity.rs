@@ -3,10 +3,20 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum OrderStatus {
     Booked,
+    ReviewPending,
+    OfferSent,
     Repairing,
     Completed,
     Cancelled,
     Paid,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServiceItem {
+    pub id: Option<i32>,
+    pub order_id: i32,
+    pub description: String,
+    pub price: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,8 +25,8 @@ pub struct ServiceOrder {
     pub bike_id: i32,
     pub customer_id: i32,
     pub status: OrderStatus,
-    pub total_price: f64, // Should use a proper Money type
-                          // In DDD, we might use Value Objects for ID types too
+    pub total_price: f64,
+    pub items: Vec<ServiceItem>,
 }
 
 impl ServiceOrder {
@@ -27,6 +37,7 @@ impl ServiceOrder {
             customer_id,
             status: OrderStatus::Booked,
             total_price: 0.0,
+            items: Vec::new(),
         }
     }
 

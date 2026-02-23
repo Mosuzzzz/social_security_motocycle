@@ -4,6 +4,9 @@ import React, { useState } from "react";
 import { apiFetch } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/context/ToastContext";
+import GuestGuard from "@/components/GuestGuard";
+import { ArrowRight } from "lucide-react";
 
 export default function RegisterPage() {
     const [formData, setFormData] = useState({
@@ -11,11 +14,12 @@ export default function RegisterPage() {
         password: "",
         name: "",
         phone: "",
-        role: "Customer", // Always customer by default as per requirements
+        role: "Customer",
     });
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
+    const { showToast } = useToast();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,6 +33,7 @@ export default function RegisterPage() {
             });
 
             router.push("/login?registered=true");
+            showToast("Account protocol initialized!", "success");
         } catch (err: unknown) {
             setError((err as Error).message || "Registration failed");
         } finally {
@@ -41,107 +46,114 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] text-white selection:bg-indigo-500/30 font-sans">
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 blur-[120px] rounded-full"></div>
-                <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full"></div>
-            </div>
-
-            <div className="relative w-full max-w-lg p-10 bg-zinc-900/50 backdrop-blur-xl border border-white/5 rounded-[32px] shadow-2xl">
-                <div className="flex flex-col items-center mb-10 text-center text-balance">
-                    <div className="w-16 h-16 bg-gradient-to-tr from-emerald-500 to-indigo-500 rounded-2xl mb-4 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                        </svg>
-                    </div>
-                    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">Join Us</h1>
-                    <p className="text-zinc-400 mt-2 text-sm max-w-xs">Create an account to start managing your motorcycle services</p>
-                </div>
-
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {error && (
-                        <div className="col-span-full p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl text-center">
-                            {error}
+        <GuestGuard>
+            <div className="flex min-h-screen items-center justify-center bg-transparent text-white p-4 py-12">
+                <div className="w-full max-w-2xl animate-in relative z-10">
+                    {/* Logo */}
+                    <div className="flex flex-col items-center mb-10">
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center text-white shrink-0 bg-white/5 border border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1)] mb-6">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path fillRule="evenodd" clipRule="evenodd" d="M12 24C18.6274 24 24 18.6274 24 12C24 5.37258 18.6274 0 12 0C5.37258 0 0 5.37258 0 12C0 18.6274 5.37258 24 12 24ZM11 4C11 3.44772 11.4477 3 12 3C12.5523 3 13 3.44772 13 4V11H20C20.5523 11 21 11.4477 21 12C21 12.5523 20.5523 13 20 13H13V20C13 20.5523 12.5523 21 12 21C11.4477 21 11 20.5523 11 20V13H4C3.44772 13 3 12.5523 3 12C3 11.4477 3.44772 11 4 11H11V4Z" fill="currentColor" />
+                            </svg>
                         </div>
-                    )}
-
-                    <div className="col-span-full md:col-span-1">
-                        <label className="block text-sm font-medium text-zinc-300 mb-2">Username</label>
-                        <input
-                            type="text"
-                            name="username"
-                            value={formData.username}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-zinc-100 placeholder:text-zinc-600"
-                            placeholder="johndoe"
-                            required
-                        />
+                        <h1 className="text-4xl font-medium tracking-tight">Deploy Node</h1>
+                        <p className="text-gray-400 mt-3 font-light">Join the MotoFlow infrastructure</p>
                     </div>
 
-                    <div className="col-span-full md:col-span-1">
-                        <label className="block text-sm font-medium text-zinc-300 mb-2">Password</label>
-                        <input
-                            type="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-zinc-100 placeholder:text-zinc-600"
-                            placeholder="••••••••"
-                            required
-                        />
+                    {/* Form Card */}
+                    <div className="ios-card p-8 md:p-10 mb-8 border border-white/10 shadow-2xl backdrop-blur-2xl">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            {error && (
+                                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl text-center font-medium backdrop-blur-sm">
+                                    {error}
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-[13px] text-gray-300 font-medium mb-2 uppercase tracking-wide">Username</label>
+                                    <input
+                                        type="text"
+                                        name="username"
+                                        value={formData.username}
+                                        onChange={handleChange}
+                                        className="ios-input"
+                                        placeholder="johndoe"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[13px] text-gray-300 font-medium mb-2 uppercase tracking-wide">Password</label>
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        className="ios-input"
+                                        placeholder="••••••••"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[13px] text-gray-300 font-medium mb-2 uppercase tracking-wide">Full Name</label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                        className="ios-input"
+                                        placeholder="John Doe"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[13px] text-gray-300 font-medium mb-2 uppercase tracking-wide">Phone Number</label>
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleChange}
+                                        className="ios-input"
+                                        placeholder="08X-XXX-XXXX"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full px-6 py-3.5 mt-4 rounded-full bg-white text-black font-semibold hover:bg-gray-200 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-[15px]"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
+                                        Initializing...
+                                    </>
+                                ) : (
+                                    <>
+                                        Deploy Account
+                                        <ArrowRight size={18} />
+                                    </>
+                                )}
+                            </button>
+                        </form>
                     </div>
 
-                    <div className="col-span-full md:col-span-1">
-                        <label className="block text-sm font-medium text-zinc-300 mb-2">Full Name</label>
-                        <input
-                            type="text"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-zinc-100 placeholder:text-zinc-600"
-                            placeholder="John Doe"
-                            required
-                        />
+                    {/* Sign In Link */}
+                    <div className="text-center">
+                        <p className="text-gray-400 text-sm font-light">
+                            Already configured?{" "}
+                            <Link href="/login" className="text-white hover:text-pink-400 transition-colors font-medium border-b border-white/30 hover:border-pink-400 pb-0.5">
+                                Secure Login
+                            </Link>
+                        </p>
                     </div>
-
-                    <div className="col-span-full md:col-span-1">
-                        <label className="block text-sm font-medium text-zinc-300 mb-2">Phone Number</label>
-                        <input
-                            type="tel"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-zinc-100 placeholder:text-zinc-600"
-                            placeholder="08X-XXX-XXXX"
-                            required
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="col-span-full mt-4 py-4 bg-white text-black font-semibold rounded-xl hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg shadow-xl shadow-white/5"
-                    >
-                        {isLoading ? (
-                            <>
-                                <div className="w-6 h-6 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
-                                Creating account...
-                            </>
-                        ) : (
-                            "Sign Up"
-                        )}
-                    </button>
-                </form>
-
-                <div className="mt-8 pt-8 border-t border-white/5 text-center">
-                    <p className="text-zinc-400 text-sm">
-                        Already have an account?{" "}
-                        <Link href="/login" className="text-white hover:underline font-medium">
-                            Sign in here
-                        </Link>
-                    </p>
                 </div>
             </div>
-        </div>
+        </GuestGuard>
     );
 }

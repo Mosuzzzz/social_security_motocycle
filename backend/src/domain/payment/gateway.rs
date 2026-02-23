@@ -7,6 +7,7 @@ pub struct PaymentResult {
     pub amount: f64,
     pub currency: String,
     pub status: PaymentStatus,
+    pub details: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

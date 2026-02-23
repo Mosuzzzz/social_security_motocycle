@@ -18,21 +18,32 @@ use std::sync::Arc;
 pub struct JwtService {
     encoding_key: Arc<EncodingKey>,
     decoding_key: Arc<DecodingKey>,
+    refresh_encoding_key: Arc<EncodingKey>,
+    refresh_decoding_key: Arc<DecodingKey>,
     expiration: usize,
+    refresh_expiration: usize,
 }
 
 impl JwtService {
     pub fn new() -> Self {
         let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+        let refresh_secret = env::var("REFRESH_SECRET").unwrap_or_else(|_| secret.clone());
         let expiration = env::var("JWT_EXPIRATION")
             .unwrap_or_else(|_| "3600".to_string())
             .parse::<usize>()
             .expect("JWT_EXPIRATION must be a number");
+        let refresh_expiration = env::var("REFRESH_EXPIRATION")
+            .unwrap_or_else(|_| "604800".to_string()) // 7 days
+            .parse::<usize>()
+            .expect("REFRESH_EXPIRATION must be a number");
 
         Self {
             encoding_key: Arc::new(EncodingKey::from_secret(secret.as_bytes())),
             decoding_key: Arc::new(DecodingKey::from_secret(secret.as_bytes())),
+            refresh_encoding_key: Arc::new(EncodingKey::from_secret(refresh_secret.as_bytes())),
+            refresh_decoding_key: Arc::new(DecodingKey::from_secret(refresh_secret.as_bytes())),
             expiration,
+            refresh_expiration,
         }
     }
 
@@ -60,6 +71,33 @@ impl JwtService {
 
     pub fn verify_token(&self, token: &str) -> Result<TokenData<Claims>, String> {
         decode::<Claims>(token, &self.decoding_key, &Validation::default())
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn generate_refresh_token(
+        &self,
+        user_id: i32,
+        username: &str,
+        role: Role,
+    ) -> Result<String, String> {
+        let expiration = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|e| e.to_string())?
+            .as_secs() as usize
+            + self.refresh_expiration;
+
+        let claims = Claims {
+            sub: username.to_string(),
+            user_id,
+            role,
+            exp: expiration,
+        };
+
+        encode(&Header::default(), &claims, &self.refresh_encoding_key).map_err(|e| e.to_string())
+    }
+
+    pub fn verify_refresh_token(&self, token: &str) -> Result<TokenData<Claims>, String> {
+        decode::<Claims>(token, &self.refresh_decoding_key, &Validation::default())
             .map_err(|e| e.to_string())
     }
 }

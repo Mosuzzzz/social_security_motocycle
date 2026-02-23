@@ -69,6 +69,17 @@ diesel::table! {
 }
 
 diesel::table! {
+    refresh_tokens (token_id) {
+        token_id -> Int4,
+        user_id -> Int4,
+        token_value -> Text,
+        expires_at -> Timestamptz,
+        is_revoked -> Bool,
+        created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::ServiceOrderStatus;
 
@@ -108,12 +119,25 @@ diesel::table! {
 }
 
 diesel::table! {
+    stock_items (item_id) {
+        item_id -> Int4,
+        #[max_length = 255]
+        name -> Varchar,
+        price -> Numeric,
+        quantity -> Int4,
+    }
+}
+
+diesel::table! {
     user_line_accounts (id) {
         id -> Int4,
         user_id -> Int4,
         #[max_length = 255]
         line_user_id -> Varchar,
         linked_at -> Timestamptz,
+        #[max_length = 255]
+        display_name -> Nullable<Varchar>,
+        picture_url -> Nullable<Text>,
     }
 }
 
@@ -140,6 +164,7 @@ diesel::joinable!(motorcycles -> users (user_id));
 diesel::joinable!(notifications -> service_orders (order_id));
 diesel::joinable!(notifications -> users (user_id));
 diesel::joinable!(payments -> service_orders (order_id));
+diesel::joinable!(refresh_tokens -> users (user_id));
 diesel::joinable!(repair_logs -> service_orders (order_id));
 diesel::joinable!(repair_logs -> users (mechanic_id));
 diesel::joinable!(service_items -> service_orders (order_id));
@@ -150,9 +175,11 @@ diesel::allow_tables_to_appear_in_same_query!(
     motorcycles,
     notifications,
     payments,
+    refresh_tokens,
     repair_logs,
     service_items,
     service_orders,
+    stock_items,
     user_line_accounts,
     users,
 );

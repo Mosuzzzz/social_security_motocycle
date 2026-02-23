@@ -8,3 +8,6 @@ backend/postman_collection.json
 backend/target/
 fontend/node_modules
 motorcycle_api_collection.json
+backend/truncate_data.sql
+SERVICE_ORDER_WORKFLOW.md
+MECHANIC_FEATURES.md
