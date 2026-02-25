@@ -98,46 +98,46 @@ export default function DashboardPage() {
             <div className="max-w-6xl mx-auto space-y-8 animate-in relative z-10">
                 {/* Welcome Section */}
                 <section>
-                    <p className="text-gray-400 font-semibold text-[11px] uppercase tracking-[0.2em] mb-2">Metrics & Overview</p>
-                    <h1 className="text-3xl md:text-5xl font-medium tracking-tight text-white">
-                        Hello, {user?.username}
+                    <p className="text-[#004B7E] font-black text-[10px] uppercase tracking-[0.2em] mb-2">Metrics & Overview</p>
+                    <h1 className="text-3xl md:text-5xl font-black text-slate-800 uppercase tracking-tighter">
+                        Welcome, {user?.username}
                     </h1>
                 </section>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard title="Active Jobs" value={activeOrders.toString()} color="pink" icon={<Clock size={22} />} />
-                    <StatCard title="Completed" value={completedOrders.toString()} color="purple" icon={<CheckCircle2 size={22} />} />
-                    <StatCard title="Action Required" value={pendingPayment.toString()} color="orange" icon={<AlertCircle size={22} />} />
-                    <StatCard title="Total Volume" value={orders.length.toString()} color="gray" icon={<TrendingUp size={22} />} />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                    <StatCard title="Active Repairs" value={activeOrders.toString()} color="blue" icon={<Clock size={22} />} />
+                    <StatCard title="Completed" value={completedOrders.toString()} color="gold" icon={<CheckCircle2 size={22} />} />
+                    <StatCard title="Pending Payment" value={pendingPayment.toString()} color="slate" icon={<AlertCircle size={22} />} />
+                    <StatCard title="Total Orders" value={orders.length.toString()} color="light-blue" icon={<TrendingUp size={22} />} />
                 </div>
 
                 {/* Content Section */}
-                <div className="space-y-4 pt-4">
+                <div className="space-y-6 pt-4">
                     <div className="flex items-center justify-between px-1">
-                        <h3 className="text-xl font-medium tracking-tight text-white">Recent Workloads</h3>
+                        <h3 className="text-xl font-black text-[#004B7E] uppercase tracking-tighter">Recent Activities</h3>
                         {orders.length > 5 && (
-                            <Link href="/dashboard/orders" className="text-pink-400 text-sm font-semibold hover:text-pink-300 transition-colors uppercase tracking-wider text-[11px]">
-                                See All
+                            <Link href="/dashboard/orders" className="text-[#004B7E] text-[10px] font-black hover:underline uppercase tracking-widest">
+                                View All <ChevronRight size={14} className="inline ml-1" />
                             </Link>
                         )}
                     </div>
 
-                    <div className="ios-card bg-black/40 border border-white/10 backdrop-blur-xl overflow-hidden shadow-2xl rounded-xl">
+                    <div className="bg-white border border-slate-100 overflow-hidden shadow-xl rounded-4xl">
                         {isLoading ? (
-                            <div className="p-12 text-center text-gray-500 font-light flex flex-col items-center">
-                                <div className="w-8 h-8 border-2 border-white/10 border-t-pink-500 rounded-full animate-spin mb-4"></div>
-                                Accessing database...
+                            <div className="p-16 text-center text-slate-400 font-bold flex flex-col items-center">
+                                <div className="w-10 h-10 border-4 border-slate-100 border-t-[#004B7E] rounded-full animate-spin mb-4"></div>
+                                Loading dashboard...
                             </div>
                         ) : orders.length === 0 ? (
-                            <div className="p-12 text-center space-y-3">
-                                <div className="w-16 h-16 mx-auto bg-white/5 rounded-full flex items-center justify-center border border-white/10">
-                                    <FileText size={24} className="text-gray-500" />
+                            <div className="p-16 text-center space-y-4">
+                                <div className="w-20 h-20 mx-auto bg-slate-50 rounded-3xl flex items-center justify-center border border-slate-100">
+                                    <FileText size={32} className="text-slate-300" />
                                 </div>
-                                <p className="text-gray-400 font-light">No workloads found.</p>
+                                <p className="text-slate-400 font-bold">No repair orders found</p>
                             </div>
                         ) : (
-                            <div className="divide-y divide-white/5">
+                            <div className="divide-y divide-slate-50">
                                 {orders.slice(0, 5).map(order => (
                                     <OrderListItem
                                         key={order.id}
@@ -173,27 +173,27 @@ function StatCard({ title, value, color, icon }: {
     icon: React.ReactNode;
 }) {
     const colorStyles: Record<string, string> = {
-        'pink': "border-pink-500/30 shadow-[0_0_15px_rgba(236,72,153,0.1)]",
-        'purple': "border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.1)]",
-        'orange': "border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.1)]",
-        'gray': "border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.05)]",
+        'blue': "bg-white border-slate-100 shadow-sm hover:shadow-xl",
+        'gold': "bg-[#FFD700] border-yellow-400 shadow-lg text-[#004B7E] hover:rotate-2",
+        'slate': "bg-slate-900 border-slate-800 text-white shadow-xl hover:-translate-y-1",
+        'light-blue': "bg-blue-50 border-blue-100 shadow-inner",
     };
 
     const iconColors: Record<string, string> = {
-        'pink': "text-pink-400 bg-pink-500/10",
-        'purple': "text-purple-400 bg-purple-500/10",
-        'orange': "text-orange-400 bg-orange-500/10",
-        'gray': "text-gray-400 bg-white/5",
+        'blue': "bg-[#004B7E]/5 text-[#004B7E]",
+        'gold': "bg-white/40 text-[#004B7E]",
+        'slate': "bg-white/10 text-[#FFD700]",
+        'light-blue': "bg-white text-blue-500",
     };
 
     return (
-        <div className={`p-5 rounded-2xl flex flex-col items-start justify-between h-36 bg-white/5 backdrop-blur-xl border transition-all hover:-translate-y-1 hover:bg-white/10 ${colorStyles[color]}`}>
-            <div className={`p-2.5 rounded-xl border border-white/5 ${iconColors[color]}`}>
+        <div className={`p-6 rounded-4xl flex flex-col items-start justify-between h-44 border transition-all duration-300 ${colorStyles[color]}`}>
+            <div className={`p-3 rounded-2xl ${iconColors[color]}`}>
                 {icon}
             </div>
             <div>
-                <span className="block text-3xl font-medium tracking-tight text-white mb-0.5">{value}</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">{title}</span>
+                <span className={`block text-4xl font-black tracking-tighter mb-1 ${color === 'slate' ? 'text-white' : 'text-[#004B7E]'}`}>{value}</span>
+                <span className={`text-[10px] font-black uppercase tracking-widest opacity-60`}>{title}</span>
             </div>
         </div>
     );
@@ -210,56 +210,47 @@ function OrderListItem({ id, status, amount, onPay, onViewReceipt, onManage, rol
 }) {
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'Completed': return "bg-purple-500/10 text-purple-400 border border-purple-500/20";
-            case 'Paid': return "bg-green-500/10 text-green-400 border border-green-500/20";
-            case 'Cancelled': return "bg-red-500/10 text-red-400 border border-red-500/20";
+            case 'Completed': return "bg-green-100 text-green-700 border-green-200";
+            case 'Paid': return "bg-blue-100 text-blue-700 border-blue-200";
+            case 'Cancelled': return "bg-red-100 text-red-700 border-red-200";
             case 'ReviewPending':
-            case 'Repairing': return "bg-orange-500/10 text-orange-400 border border-orange-500/20";
-            default: return "bg-gray-500/10 text-gray-400 border border-gray-500/20";
+            case 'Repairing': return "bg-yellow-100 text-yellow-700 border-yellow-200";
+            default: return "bg-slate-100 text-slate-700 border-slate-200";
         }
     };
 
     return (
-        <div className="flex items-center justify-between p-5 hover:bg-white/5 transition-colors cursor-pointer group" onClick={onManage}>
-            <div className="flex-1 min-w-0 pr-4">
-                <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-sm text-gray-200 group-hover:text-white transition-colors">Task ID #{id}</h4>
-                    <span className="font-medium text-sm text-gray-200">฿{amount}</span>
+        <div className="flex items-center justify-between p-6 hover:bg-slate-50 transition-colors cursor-pointer group" onClick={onManage}>
+            <div className="flex-1 min-w-0 pr-6">
+                <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-black text-slate-800 uppercase tracking-tight group-hover:text-[#004B7E] transition-colors">Order #{id}</h4>
+                    <span className="font-black text-xl text-[#004B7E]">฿{amount}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${getStatusStyle(status)}`}>
+                <div className="flex items-center gap-4">
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusStyle(status)}`}>
                         {status}
                     </span>
-                    <span className="text-xs text-gray-600 font-light opacity-0 group-hover:opacity-100 transition-opacity">Tap configuring</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase opacity-0 group-hover:opacity-100 transition-all">Tap for details</span>
                 </div>
             </div>
 
-            <div className="flex items-center gap-3">
-                {status === "Completed" && role === "Customer" && (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onPay();
-                        }}
-                        className="px-4 py-1.5 bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded-full text-xs font-semibold hover:bg-pink-500 hover:text-white transition-all shadow-[0_0_10px_rgba(236,72,153,0.2)]"
-                        title="Commence Payment"
-                    >
-                        PAY NOW
-                    </button>
-                )}
+            <div className="flex items-center gap-4">
+
                 {status === "Paid" && (
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
                             onViewReceipt();
                         }}
-                        className="p-2 bg-green-500/20 text-green-400 border border-green-500/30 rounded-full hover:bg-green-500 hover:text-white transition-all"
-                        title="View Documentation"
+                        className="p-3 bg-slate-100 text-slate-600 rounded-xl hover:bg-[#FFD700] hover:text-[#004B7E] transition-all"
+                        title="View Receipt"
                     >
-                        <FileText size={16} />
+                        <FileText size={18} />
                     </button>
                 )}
-                <ChevronRight size={18} className="text-gray-600 group-hover:text-white transition-colors" />
+                <div className="w-10 h-10 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center group-hover:bg-[#004B7E] group-hover:text-white transition-all">
+                    <ChevronRight size={20} />
+                </div>
             </div>
         </div>
     );

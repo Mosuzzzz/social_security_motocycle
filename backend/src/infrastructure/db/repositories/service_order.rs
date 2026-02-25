@@ -3,7 +3,7 @@ use crate::infrastructure::db::connection::DbPool;
 use crate::infrastructure::db::models::{
     NewServiceOrder, ServiceItemModel, ServiceOrderModel, ServiceOrderStatusEnum,
 };
-use crate::infrastructure::db::schema::{service_items, service_orders};
+use crate::infrastructure::db::schema::{notifications, service_items, service_orders};
 use bigdecimal::{BigDecimal, FromPrimitive};
 use diesel::prelude::*;
 
@@ -154,6 +154,27 @@ impl ServiceOrderRepository {
             .into_iter()
             .map(|model| self.map_model_to_entity(model))
             .collect())
+    }
+
+    pub async fn delete_order(&self, order_id_val: i32) -> Result<(), String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+
+        // Delete notifications first (FK: notifications -> service_orders)
+        diesel::delete(notifications::table.filter(notifications::order_id.eq(order_id_val)))
+            .execute(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        // Delete associated service items
+        diesel::delete(service_items::table.filter(service_items::order_id.eq(order_id_val)))
+            .execute(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        // Delete order
+        diesel::delete(service_orders::table.find(order_id_val))
+            .execute(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        Ok(())
     }
 
     fn map_model_to_entity(&self, model: ServiceOrderModel) -> ServiceOrder {

@@ -5,16 +5,18 @@ import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+import DashboardLayout from "@/components/DashboardLayout";
 import {
     ChevronLeft,
     CreditCard,
     Smartphone,
     User,
-    Mail,
-    Phone,
-    CheckCircle,
-    Info,
-    ShieldCheck
+    CheckCircle2,
+    ShieldCheck,
+    Receipt,
+    Wallet,
+    ArrowRight,
+    ArrowLeft
 } from "lucide-react";
 import PromptPayModal from "@/components/PromptPayModal";
 
@@ -58,15 +60,13 @@ export default function CheckoutPage() {
         };
 
         if (params.id) fetchOrder();
-    }, [params.id]);
+    }, [params.id, router, params.id, showToast]);
 
     const handlePayment = async () => {
         if (!order) return;
 
-        // Wait up to 3 seconds for OmiseCard to load if it's not ready
         let omise = (window as any).OmiseCard;
         if (!omise) {
-            console.log("Waiting for OmiseCard to load...");
             for (let i = 0; i < 30; i++) {
                 await new Promise(resolve => setTimeout(resolve, 100));
                 omise = (window as any).OmiseCard;
@@ -84,7 +84,7 @@ export default function CheckoutPage() {
         omise.configure({
             publicKey: process.env.NEXT_PUBLIC_OMISE_PUBLIC_KEY,
             currency: 'thb',
-            frameLabel: 'MotoFlow Service',
+            frameLabel: 'Pragunการซ่อม - Service Center',
             submitLabel: 'PAY NOW',
         });
 
@@ -145,159 +145,168 @@ export default function CheckoutPage() {
     };
 
     if (isLoading) return (
-        <div className="min-h-screen bg-white flex items-center justify-center">
-            <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
-        </div>
+        <DashboardLayout>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="w-12 h-12 border-4 border-slate-100 border-t-[#004B7E] rounded-full animate-spin"></div>
+                <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Connecting to secure payment system...</span>
+            </div>
+        </DashboardLayout>
     );
 
     if (!order) return null;
 
     return (
-        <div className="min-h-screen bg-[#F9FAFB] text-zinc-900 font-sans selection:bg-indigo-100">
-            <div className="max-w-[1200px] mx-auto min-h-screen flex flex-col md:flex-row shadow-2xl bg-white overflow-hidden">
-
-                {/* Left Column: Payment Info */}
-                <div className="flex-1 p-8 md:p-16 space-y-12">
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
+        <DashboardLayout>
+            <div className="max-w-7xl mx-auto space-y-10 py-6">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div className="space-y-2">
                         <button
                             onClick={() => router.back()}
-                            className="p-2 -ml-2 hover:bg-zinc-100 rounded-full transition-colors text-zinc-400 hover:text-zinc-900"
+                            className="flex items-center gap-2 text-slate-400 hover:text-[#004B7E] transition-colors text-[10px] font-black uppercase tracking-widest mb-4 group"
                         >
-                            <ChevronLeft size={24} />
+                            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+                            Back to Repair Order
                         </button>
-                        <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white font-black text-xl italic shadow-xl">
-                                M
-                            </div>
-                            <span className="font-bold text-xl tracking-tighter">MotoFlow</span>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#004B7E]/5 text-[#004B7E] text-[10px] font-black uppercase tracking-wider border border-[#004B7E]/10">
+                            <ShieldCheck size={14} />
+                            Secure Payment System
                         </div>
-                    </div>
-
-                    {/* Greeting */}
-                    <div className="space-y-2">
-                        <p className="text-zinc-500 font-medium">Hi {user?.username},</p>
-                        <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900">
-                            Pay MotoFlow <span className="text-indigo-600">฿{order.total_price.toLocaleString()}</span>
+                        <h1 className="text-4xl font-black text-slate-800 uppercase tracking-tighter">
+                            Payment
                         </h1>
+                        <p className="text-slate-400 font-bold text-sm max-w-md">Verify details and complete payment to finish the repair process</p>
                     </div>
 
-
-                    {/* Payment Methods */}
-                    <div className="space-y-4">
-                        <div
-                            onClick={() => setPaymentMethod("card")}
-                            className={`p-6 border-2 rounded-2xl cursor-pointer transition-all flex items-center justify-between group ${paymentMethod === "card" ? "border-indigo-600 bg-indigo-50/10 shadow-md" : "border-zinc-100 hover:border-zinc-200"}`}
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${paymentMethod === "card" ? "bg-indigo-600 text-white" : "bg-zinc-100 text-zinc-400"}`}>
-                                    <CreditCard size={24} />
-                                </div>
-                                <div>
-                                    <p className="font-bold text-zinc-900">Credit / Debit Card</p>
-                                    <div className="flex gap-1 mt-1">
-                                        <div className="w-6 h-4 bg-zinc-200 rounded-[2px]"></div>
-                                        <div className="w-6 h-4 bg-zinc-200 rounded-[2px]"></div>
-                                        <div className="w-6 h-4 bg-zinc-200 rounded-[2px]"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${paymentMethod === "card" ? "border-indigo-600" : "border-zinc-300"}`}>
-                                {paymentMethod === "card" && <div className="w-2.5 h-2.5 bg-indigo-600 rounded-full"></div>}
-                            </div>
+                    <div className="flex bg-slate-50/50 p-1 rounded-2xl border border-slate-100 shrink-0">
+                        <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-xl shadow-sm">
+                            <Receipt size={20} className="text-[#004B7E]" />
+                            <span className="text-sm font-black text-slate-800">#SO-{order.id}</span>
                         </div>
-
-                        <div
-                            onClick={() => setPaymentMethod("promptpay")}
-                            className={`p-6 border-2 rounded-2xl cursor-pointer transition-all flex items-center justify-between group ${paymentMethod === "promptpay" ? "border-indigo-600 bg-indigo-50/10 shadow-md" : "border-zinc-100 hover:border-zinc-200"}`}
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${paymentMethod === "promptpay" ? "bg-indigo-600 text-white" : "bg-zinc-100 text-zinc-400"}`}>
-                                    <Smartphone size={24} />
-                                </div>
-                                <div>
-                                    <p className="font-bold text-zinc-900">PromptPay QR</p>
-                                    <p className="text-xs text-zinc-500">Scan with any banking app</p>
-                                </div>
-                            </div>
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${paymentMethod === "promptpay" ? "border-indigo-600" : "border-zinc-300"}`}>
-                                {paymentMethod === "promptpay" && <div className="w-2.5 h-2.5 bg-indigo-600 rounded-full"></div>}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Personal Information */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-black uppercase tracking-widest text-zinc-400">Personal Information</h3>
-                        </div>
-                        <div className="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-white rounded-lg border border-zinc-200 flex items-center justify-center text-zinc-400">
-                                    <User size={16} />
-                                </div>
-                                <span className="font-medium text-zinc-700">{user?.username}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-white rounded-lg border border-zinc-200 flex items-center justify-center text-zinc-400">
-                                    <Smartphone size={16} />
-                                </div>
-                                <span className="font-medium text-zinc-700">Verified Account</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Pay Button */}
-                    <button
-                        onClick={handlePayment}
-                        disabled={isProcessing}
-                        className="w-full py-4 bg-zinc-900 text-white font-black rounded-xl hover:bg-black transition-all shadow-xl shadow-zinc-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-lg"
-                    >
-                        {isProcessing ? "Processing..." : `Pay ฿${order.total_price.toLocaleString()}`}
-                    </button>
-
-                    <div className="flex items-center justify-center gap-4 text-zinc-400">
-                        <div className="flex items-center gap-1.5 grayscale opacity-50">
-                            <ShieldCheck size={16} />
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Secure Payment</span>
-                        </div>
-                        <div className="w-1 h-1 bg-zinc-300 rounded-full"></div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest">PCI-DSS Compliant</span>
                     </div>
                 </div>
 
-                {/* Right Column: Order Summary */}
-                <div className="w-full md:w-[450px] bg-zinc-50 border-l border-zinc-100 p-8 md:p-16 flex flex-col">
-                    <div className="flex-1 space-y-8">
-                        <h3 className="text-xl font-extrabold tracking-tight text-zinc-900 border-b border-zinc-200 pb-4">Summary</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                    <div className="lg:col-span-2 space-y-10">
+                        {/* Select Payment Method */}
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-black text-[#004B7E] uppercase tracking-[0.2em] flex items-center gap-2 px-2">
+                                <Wallet size={18} />
+                                Select Payment Method
+                            </h3>
 
-                        <div className="space-y-6">
-                            {order.items.length > 0 ? order.items.map((item, idx) => (
-                                <div key={idx} className="flex flex-col space-y-1">
-                                    <div className="flex items-start justify-between gap-4">
-                                        <span className="font-bold text-zinc-900 leading-tight">{item.description}</span>
-                                        <span className="font-bold text-zinc-900 shrink-0">฿{item.price.toLocaleString()}</span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <button
+                                    onClick={() => setPaymentMethod("card")}
+                                    className={`relative p-8 rounded-[2.5rem] border transition-all text-left overflow-hidden group ${paymentMethod === "card" ? "border-[#FFD700] bg-[#FFD700]/5 shadow-xl shadow-[#FFD700]/10" : "border-slate-100 bg-white hover:border-[#004B7E] shadow-sm hover:shadow-lg"}`}
+                                >
+                                    <div className="relative z-10 flex flex-col items-start gap-6">
+                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${paymentMethod === "card" ? "bg-[#004B7E] text-white" : "bg-slate-50 text-slate-400"}`}>
+                                            <CreditCard size={28} />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-xl font-black text-slate-800 uppercase">Credit / Debit Card</h4>
+                                            <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">Visa, Mastercard, JCB</p>
+                                        </div>
                                     </div>
-                                    <span className="text-xs text-zinc-500 font-medium tracking-tight">Quantity 1 • ฿{item.price.toLocaleString()} each</span>
-                                </div>
-                            )) : (
-                                <div className="text-zinc-400 italic text-sm">No items found in this order.</div>
-                            )}
+                                    {paymentMethod === "card" && (
+                                        <div className="absolute top-6 right-6 text-[#004B7E]">
+                                            <CheckCircle2 size={24} />
+                                        </div>
+                                    )}
+                                </button>
+
+                                <button
+                                    onClick={() => setPaymentMethod("promptpay")}
+                                    className={`relative p-8 rounded-[2.5rem] border transition-all text-left overflow-hidden group ${paymentMethod === "promptpay" ? "border-[#FFD700] bg-[#FFD700]/5 shadow-xl shadow-[#FFD700]/10" : "border-slate-100 bg-white hover:border-[#004B7E] shadow-sm hover:shadow-lg"}`}
+                                >
+                                    <div className="relative z-10 flex flex-col items-start gap-6">
+                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${paymentMethod === "promptpay" ? "bg-[#004B7E] text-white" : "bg-slate-50 text-slate-400"}`}>
+                                            <Smartphone size={28} />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-xl font-black text-slate-800 uppercase">PromptPay</h4>
+                                            <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">Pay via QR Code</p>
+                                        </div>
+                                    </div>
+                                    {paymentMethod === "promptpay" && (
+                                        <div className="absolute top-6 right-6 text-[#004B7E]">
+                                            <CheckCircle2 size={24} />
+                                        </div>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Customer Info */}
+                        <div className="p-8 bg-white border border-slate-100 rounded-[2.5rem] flex flex-col md:flex-row items-center gap-8 shadow-xl">
+                            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100 text-[#004B7E] shrink-0">
+                                <User size={32} />
+                            </div>
+                            <div className="flex-1 text-center md:text-left">
+                                <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">User Information</h3>
+                                <p className="text-slate-400 font-bold text-sm uppercase">Account: <span className="text-[#004B7E]">{user?.username}</span></p>
+                            </div>
+                            <div className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 rounded-full border border-emerald-100">
+                                <ShieldCheck size={14} className="text-emerald-500" />
+                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600">Secure Merchant</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="mt-12 pt-8 border-t-2 border-dashed border-zinc-200 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Subtotal</span>
-                            <span className="font-bold text-zinc-900 leading-none">฿{order.total_price.toLocaleString()}</span>
+                    {/* Sidebar: Order Summary */}
+                    <div className="space-y-6">
+                        <div className="p-8 bg-white border border-slate-100 rounded-[2.5rem] space-y-8 flex flex-col shadow-xl">
+                            <div className="flex items-center justify-between border-b border-slate-50 pb-6">
+                                <h3 className="text-lg font-black text-[#004B7E] uppercase tracking-tight">Payment Summary</h3>
+                                <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
+                                    <Receipt size={18} />
+                                </div>
+                            </div>
+
+                            <div className="space-y-6 flex-1 max-h-[300px] overflow-y-auto px-1 custom-scrollbar">
+                                {order.items.map((item, idx) => (
+                                    <div key={idx} className="flex flex-col space-y-1">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <span className="font-bold text-slate-800 leading-tight text-sm">{item.description}</span>
+                                            <span className="font-black text-[#004B7E] shrink-0 text-sm">฿{item.price.toLocaleString()}</span>
+                                        </div>
+                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Repair Service</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="pt-8 border-t border-slate-50 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Total Amount</span>
+                                    <span className="text-3xl font-black text-[#004B7E] tracking-tighter leading-none">฿{order.total_price.toLocaleString()}</span>
+                                </div>
+
+                                <button
+                                    onClick={handlePayment}
+                                    disabled={isProcessing}
+                                    className="w-full h-16 bg-[#FFD700] text-[#004B7E] font-black rounded-2xl hover:scale-105 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FFD700]/20 active:scale-95 disabled:opacity-50 group/btn mt-4 uppercase tracking-[0.2em] text-[10px]"
+                                >
+                                    {isProcessing ? (
+                                        <div className="w-5 h-5 border-2 border-[#004B7E]/20 border-t-[#004B7E] rounded-full animate-spin"></div>
+                                    ) : (
+                                        <>
+                                            Pay Now
+                                            <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Taxes</span>
-                            <span className="font-bold text-zinc-900 leading-none">฿0.00</span>
-                        </div>
-                        <div className="flex items-center justify-between pt-4">
-                            <span className="text-lg font-black tracking-tight text-zinc-900">Total order amount</span>
-                            <span className="text-2xl font-black tracking-tighter text-indigo-600 italic">฿{order.total_price.toLocaleString()}</span>
+
+                        <div className="p-8 bg-[#004B7E]/5 border border-[#004B7E]/10 rounded-[2.5rem] space-y-4 shadow-sm">
+                            <div className="flex items-center gap-2 text-[#004B7E]">
+                                <ShieldCheck size={18} />
+                                <h4 className="font-black text-[9px] uppercase tracking-[0.2em]">Security Standard</h4>
+                            </div>
+                            <p className="text-slate-400 text-[9px] font-bold leading-relaxed uppercase tracking-wider">
+                                Your information is encrypted using AES-256 and processed directly via Omise.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -313,6 +322,6 @@ export default function CheckoutPage() {
                     }}
                 />
             )}
-        </div>
+        </DashboardLayout>
     );
 }

@@ -1,0 +1,2 @@
+ALTER TABLE service_orders
+ALTER COLUMN bike_id DROP NOT NULL;

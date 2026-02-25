@@ -1,0 +1,3 @@
+ALTER TABLE service_orders
+ALTER COLUMN bike_id
+SET NOT NULL;

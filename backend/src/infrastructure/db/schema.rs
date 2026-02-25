@@ -109,7 +109,7 @@ diesel::table! {
 
     service_orders (order_id) {
         order_id -> Int4,
-        bike_id -> Int4,
+        bike_id -> Nullable<Int4>,
         customer_id -> Int4,
         status -> ServiceOrderStatus,
         total_price -> Numeric,

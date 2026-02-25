@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MotoFlow | Premium Motorcycle Service",
-  description: "Next-generation motorcycle service and inventory management system.",
+  title: "Pragunการซ่อม | Professional Motorcycle Service Center",
+  description: "Pragunการซ่อม (Pragun Repair) - The No.1 Motorcycle Specialist in Nakhon Ratchasima. Expert repairs and genuine parts.",
 };
 
 import { AuthProvider } from "@/context/AuthContext";
@@ -30,23 +30,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-black text-white selection:bg-pink-500/30 font-sans`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[#F8FAFC] text-slate-800 selection:bg-[#FFD700]/30 font-sans`}
       >
-        {/* Global Background Glowing Effects */}
-        <div className="fixed inset-0 z-[-1] overflow-hidden bg-black pointer-events-none">
-          <div className="absolute w-[800px] h-[300px] bg-gradient-to-r from-pink-600 to-red-600 blur-[100px] rounded-[100%] rotate-[-15deg] top-[15%] left-[-10%] opacity-60"></div>
-          <div className="absolute w-[800px] h-[350px] bg-gradient-to-r from-purple-800 to-pink-500 blur-[120px] rounded-[100%] rotate-[15deg] top-[30%] right-[-10%] opacity-50"></div>
-          <div className="absolute w-[1200px] h-[250px] bg-gradient-to-r from-transparent via-red-500 to-transparent blur-[80px] top-[40%] left-[-10%] opacity-40"></div>
-
-          <div className="absolute w-[150%] h-[1200px] border-t border-white/20 rounded-[100%] top-[40%] left-[-25%] shadow-[0_0_50px_rgba(255,0,128,0.4)] transform -rotate-[5deg]"></div>
-          <div className="absolute w-[130%] h-[1000px] border-t border-white/10 rounded-[100%] top-[30%] left-[-15%] transform rotate-[8deg]"></div>
-
-          <div className="absolute top-[25%] left-[25%] w-1 h-1 bg-white rounded-full shadow-[0_0_8px_white] opacity-70"></div>
-          <div className="absolute top-[40%] left-[55%] w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_12px_white] opacity-60"></div>
-          <div className="absolute top-[20%] right-[35%] w-1 h-1 bg-white rounded-full shadow-[0_0_8px_white] opacity-80"></div>
-          <div className="absolute top-[50%] right-[15%] w-1 h-1 bg-white rounded-full shadow-[0_0_6px_white] opacity-40"></div>
-        </div>
-
         <AuthProvider>
           <ToastProvider>
             {children}

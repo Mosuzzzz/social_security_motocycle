@@ -2,6 +2,7 @@ pub mod add_service_item;
 pub mod add_stock_item;
 pub mod connect_line;
 pub mod create_service_order;
+pub mod delete_service_order;
 pub mod delete_stock_item;
 pub mod disconnect_line;
 pub mod get_dashboard_stats;

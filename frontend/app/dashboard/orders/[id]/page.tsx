@@ -17,7 +17,8 @@ import {
     XCircle,
     Package,
     Send,
-    ThumbsUp
+    ThumbsUp,
+    CreditCard
 } from "lucide-react";
 
 interface ServiceItem {
@@ -29,7 +30,7 @@ interface ServiceItem {
 
 interface ServiceOrder {
     id: number;
-    bike_id: number;
+    bike_id: number | null;
     customer_id: number;
     status: string;
     total_price: number;
@@ -93,10 +94,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 body: JSON.stringify({
                     order_id: parseInt(resolvedParams.id),
                     stock_item_id: parseInt(selectedStockId),
-                    quantity: 1, // Defaulting to 1 for simplicity now
+                    quantity: 1,
                 }),
             });
-            showToast("Stock item used successfully", "success");
+            showToast("Stock item added to repair order", "success");
             setSelectedStockId("");
             fetchOrderDetail();
             fetchStockItems();
@@ -135,36 +136,47 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             setNewItemPrice("");
             fetchOrderDetail();
         } catch (err: unknown) {
-            showToast((err as Error).message || "Failed to add item", "error");
+            showToast((err as Error).message || "Failed to add service item", "error");
         } finally {
             setIsAddingItem(false);
         }
     };
 
-    const updateStatus = async (newStatus: string) => {
+    const updateStatus = async (newStatus: string, price?: number) => {
         try {
             await apiFetch("/api/orders", {
                 method: "PUT",
                 body: JSON.stringify({
                     order_id: parseInt(resolvedParams.id),
                     status: newStatus,
+                    total_price: price
                 }),
             });
-            showToast(`Order status updated to ${newStatus}`, "success");
+            showToast(`Status updated to ${newStatus}`, "success");
             fetchOrderDetail();
         } catch (err: unknown) {
             showToast((err as Error).message || "Failed to update status", "error");
         }
     };
 
+    const handleComplete = () => {
+        const priceStr = prompt("Enter total service price (฿):", order?.total_price.toString());
+        if (priceStr !== null) {
+            const price = parseFloat(priceStr);
+            if (isNaN(price)) {
+                showToast("Invalid price entered", "error");
+                return;
+            }
+            updateStatus("Completed", price);
+        }
+    };
+
     if (isLoading) {
         return (
             <DashboardLayout>
-                <div className="flex items-center justify-center h-96">
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
-                        <span className="text-zinc-500 font-medium">Loading order details...</span>
-                    </div>
+                <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+                    <div className="w-12 h-12 border-4 border-[#004B7E]/20 border-t-[#004B7E] rounded-full animate-spin"></div>
+                    <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">Loading data...</span>
                 </div>
             </DashboardLayout>
         );
@@ -173,8 +185,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     if (!order) {
         return (
             <DashboardLayout>
-                <div className="text-center py-20">
-                    <p className="text-zinc-500">Order not found</p>
+                <div className="text-center py-20 bg-white rounded-4xl border border-slate-100 shadow-xl">
+                    <XCircle size={48} className="mx-auto text-red-400 mb-4" />
+                    <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Repair order not found</p>
                 </div>
             </DashboardLayout>
         );
@@ -186,228 +199,220 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
     return (
         <DashboardLayout>
-            <div className="max-w-5xl mx-auto space-y-8">
+            <div className="max-w-7xl mx-auto space-y-8 animate-in relative z-10 pt-4 pb-20">
                 {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex items-center gap-6">
                         <button
                             onClick={() => router.back()}
-                            className="p-2 hover:bg-white/5 rounded-xl transition-colors"
+                            className="w-12 h-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:text-[#004B7E] hover:border-[#004B7E] transition-all shadow-sm"
                         >
-                            <ArrowLeft className="text-zinc-400" size={20} />
+                            <ArrowLeft size={20} />
                         </button>
                         <div>
-                            <h1 className="text-3xl font-bold text-white">Order #SO-{order.id}</h1>
-                            <p className="text-zinc-500 text-sm mt-1">Service order details and items</p>
+                            <p className="text-[#004B7E] font-black text-[10px] uppercase tracking-[0.2em] mb-1">Order Details</p>
+                            <h1 className="text-3xl md:text-5xl font-black text-slate-800 uppercase tracking-tighter">
+                                Repair Order <span className="text-[#004B7E]">#SO-{order.id}</span>
+                            </h1>
                         </div>
                     </div>
                     <StatusBadge status={order.status} />
                 </div>
 
-                {/* Order Info Card */}
-                <div className="bg-zinc-900 border border-white/5 rounded-3xl p-8 space-y-6">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                        <Package size={20} className="text-indigo-400" />
-                        Order Information
-                    </h2>
-                    <div className="grid grid-cols-2 gap-6">
-                        <div>
-                            <p className="text-xs uppercase tracking-wider text-zinc-500 font-bold mb-1">Bike ID</p>
-                            <p className="text-white font-mono">#{order.bike_id}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs uppercase tracking-wider text-zinc-500 font-bold mb-1">Customer ID</p>
-                            <p className="text-white font-mono">#{order.customer_id}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs uppercase tracking-wider text-zinc-500 font-bold mb-1">Total Price</p>
-                            <p className="text-2xl font-bold text-emerald-400">฿{order.total_price.toLocaleString()}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs uppercase tracking-wider text-zinc-500 font-bold mb-1">Status</p>
-                            <StatusBadge status={order.status} />
-                        </div>
-                    </div>
-
-                    {/* Status Actions */}
-                    <div className="flex gap-3 pt-4 border-t border-white/5">
-                        {isMechanic && order.status === "Booked" && (
-                            <button
-                                onClick={() => updateStatus("ReviewPending")}
-                                className="px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white rounded-xl font-bold transition-all"
-                            >
-                                <Send size={16} className="inline mr-2" />
-                                Send for Review
-                            </button>
-                        )}
-                        {isAdmin && order.status === "ReviewPending" && (
-                            <button
-                                onClick={() => updateStatus("OfferSent")}
-                                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-bold transition-all"
-                            >
-                                <Send size={16} className="inline mr-2" />
-                                Send Price Offer
-                            </button>
-                        )}
-                        {isCustomer && (order.status === "Booked" || order.status === "ReviewPending" || order.status === "OfferSent") && (
-                            <div className="flex gap-3">
-                                {order.status === "OfferSent" && (
-                                    <button
-                                        onClick={() => updateStatus("Repairing")}
-                                        className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold transition-all"
-                                    >
-                                        <ThumbsUp size={16} className="inline mr-2" />
-                                        Confirm & Start Repair
-                                    </button>
-                                )}
-                                <button
-                                    onClick={() => {
-                                        if (confirm("Are you sure you want to cancel this order?")) {
-                                            updateStatus("Cancelled");
-                                        }
-                                    }}
-                                    className="px-4 py-2 bg-white/5 hover:bg-red-500/10 text-red-400 border border-white/5 rounded-xl font-bold transition-all flex items-center gap-2"
-                                >
-                                    <XCircle size={16} />
-                                    {order.status === "OfferSent" ? "Reject & Cancel" : "Cancel Booking"}
-                                </button>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2 space-y-8">
+                        {/* Order Summary Card */}
+                        <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 md:p-10 shadow-2xl relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform pointer-events-none">
+                                <Package size={120} />
                             </div>
-                        )}
-                        {(isMechanic || isAdmin) && order.status === "Repairing" && (
-                            <button
-                                onClick={() => updateStatus("Completed")}
-                                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold transition-all"
-                            >
-                                <CheckCircle2 size={16} className="inline mr-2" />
-                                Mark as Completed
-                            </button>
-                        )}
-                        {/* Emergency Start for Mechanics */}
-                        {isMechanic && order.status === "Booked" && (
-                            <button
-                                onClick={() => updateStatus("Repairing")}
-                                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-xl font-bold transition-all border border-white/5"
-                            >
-                                Quick Start (Skip Review)
-                            </button>
-                        )}
-                    </div>
-                </div>
 
-                {/* Service Items */}
-                <div className="bg-zinc-900 border border-white/5 rounded-3xl p-8 space-y-6">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-white">Service Items</h2>
-                        <span className="text-sm text-zinc-500">{order.items.length} items</span>
-                    </div>
-
-                    {/* Items List */}
-                    <div className="space-y-3">
-                        {order.items.length === 0 ? (
-                            <div className="text-center py-12 text-zinc-500">
-                                <Package size={48} className="mx-auto mb-4 opacity-20" />
-                                <p>No service items added yet</p>
-                            </div>
-                        ) : (
-                            order.items.map((item, index) => (
-                                <div
-                                    key={item.id || `service-item-${index}`}
-                                    className="flex items-center justify-between p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
-                                >
-                                    <div className="flex-1">
-                                        <p className="text-white font-medium">{item.description}</p>
+                            <div className="relative z-10 space-y-8">
+                                <div className="flex items-center gap-4 text-slate-800">
+                                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-[#004B7E]">
+                                        <Package size={20} />
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-emerald-400 font-bold">฿{item.price.toLocaleString()}</p>
+                                    <h2 className="text-xl font-black uppercase tracking-tight">Booking Information</h2>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Bike ID</p>
+                                        <p className="text-2xl font-black text-[#004B7E]">{order.bike_id ? `#${order.bike_id}` : "None (Parts Only)"}</p>
+                                    </div>
+                                    <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">User ID</p>
+                                        <p className="text-2xl font-black text-[#004B7E]">#{order.customer_id}</p>
+                                    </div>
+                                    <div className="p-6 bg-[#004B7E] rounded-3xl">
+                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Total Price</p>
+                                        <p className="text-3xl font-black text-[#FFD700]">฿{order.total_price.toLocaleString()}</p>
+                                    </div>
+                                    <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl flex flex-col justify-center">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Order Status</p>
+                                        <StatusBadge status={order.status} />
                                     </div>
                                 </div>
-                            ))
-                        )}
+
+                                {/* Status Actions */}
+                                <div className="flex flex-wrap gap-3 pt-8 border-t border-slate-50">
+                                    {isMechanic && order.status === "Booked" && (
+                                        <button
+                                            onClick={() => updateStatus("ReviewPending")}
+                                            className="px-6 py-3 bg-[#004B7E] text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-[#004B7E]/20 hover:scale-105 transition-all flex items-center gap-2"
+                                        >
+                                            <Send size={14} />
+                                            Submit for Review
+                                        </button>
+                                    )}
+                                    {isAdmin && order.status === "ReviewPending" && (
+                                        <button
+                                            onClick={() => updateStatus("OfferSent")}
+                                            className="px-6 py-3 bg-[#FFD700] text-[#004B7E] rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+                                        >
+                                            <Send size={14} />
+                                            Confirm Quote
+                                        </button>
+                                    )}
+                                    {isCustomer && order.status === "Completed" && (
+                                        <button
+                                            onClick={() => router.push(`/dashboard/payments/checkout/${order.id}`)}
+                                            className="px-6 py-3 bg-[#FFD700] text-[#004B7E] rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+                                        >
+                                            <CreditCard size={14} />
+                                            Pay Now
+                                        </button>
+                                    )}
+                                    {isCustomer && (order.status === "Booked" || order.status === "ReviewPending" || order.status === "OfferSent") && (
+                                        <div className="flex flex-wrap gap-3">
+                                            {order.status === "OfferSent" && (
+                                                <button
+                                                    onClick={() => updateStatus("Repairing")}
+                                                    className="px-6 py-3 bg-[#004B7E] text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+                                                >
+                                                    <ThumbsUp size={14} />
+                                                    Confirm & Start Repair
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => {
+                                                    if (confirm("Are you sure you want to cancel this order?")) {
+                                                        updateStatus("Cancelled");
+                                                    }
+                                                }}
+                                                className="px-6 py-3 bg-red-50 text-red-500 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all flex items-center gap-2 border border-red-100"
+                                            >
+                                                <XCircle size={14} />
+                                                Cancel Order
+                                            </button>
+                                        </div>
+                                    )}
+                                    {(isMechanic || isAdmin) && order.status === "Repairing" && (
+                                        <button
+                                            onClick={handleComplete}
+                                            className="px-6 py-3 bg-green-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-green-500/20 hover:scale-105 transition-all flex items-center gap-2"
+                                        >
+                                            <CheckCircle2 size={14} />
+                                            Mark as Completed
+                                        </button>
+                                    )}
+
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Service Items Table */}
+                        <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 md:p-10 shadow-xl space-y-8">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">Spare Parts & Service Items</h2>
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{order.items.length} items</span>
+                            </div>
+
+                            <div className="space-y-4">
+                                {order.items.length === 0 ? (
+                                    <div className="text-center py-12 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                                        <Package size={40} className="mx-auto mb-3 text-slate-200" />
+                                        <p className="text-slate-400 font-bold text-sm">No service items yet.</p>
+                                    </div>
+                                ) : (
+                                    order.items.map((item, index) => (
+                                        <div key={item.id || `item-${index}`} className="flex items-center justify-between p-6 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white hover:shadow-lg transition-all group">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-[#004B7E] group-hover:text-white transition-all">
+                                                    <Wrench size={14} />
+                                                </div>
+                                                <span className="font-bold text-slate-700">{item.description}</span>
+                                            </div>
+                                            <span className="text-xl font-black text-[#004B7E]">฿{item.price.toLocaleString()}</span>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Stock Items Section */}
-                    {(isMechanic || isAdmin) && order.status !== "Completed" && order.status !== "Paid" && (
-                        <div className="pt-6 border-t border-white/5 space-y-4">
-                            <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-                                <Package size={16} />
-                                Use from Stock
-                            </h3>
-                            <div className="flex flex-col md:flex-row gap-4">
-                                <select
-                                    value={selectedStockId}
-                                    onChange={(e) => setSelectedStockId(e.target.value)}
-                                    className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white appearance-none"
-                                >
-                                    <option value="" className="bg-zinc-900">Select an item from stock...</option>
-                                    {stockItems.map(item => (
-                                        <option
-                                            key={`stock-opt-${item.id}`}
-                                            value={item.id}
-                                            disabled={item.quantity <= 0}
-                                            className="bg-zinc-900"
-                                        >
-                                            {item.name} - ฿{item.price.toLocaleString()} ({item.quantity} in stock)
-                                        </option>
-                                    ))}
-                                </select>
-                                <button
-                                    onClick={handleUseStockItem}
-                                    disabled={isUsingStock || !selectedStockId}
-                                    className="px-8 py-3 bg-indigo-500 hover:bg-indigo-600 disabled:bg-indigo-500/50 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap"
-                                >
-                                    {isUsingStock ? (
-                                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                                    ) : (
-                                        <Plus size={16} />
-                                    )}
-                                    Use Stock Item
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                    {/* Sidebar: Admin/Mechanic Controls */}
+                    <div className="space-y-8">
+                        {(isMechanic || isAdmin) && order.status !== "Completed" && order.status !== "Paid" && (
+                            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-xl space-y-6">
+                                <h3 className="text-sm font-black text-[#004B7E] uppercase tracking-widest flex items-center gap-2">
+                                    <Package size={16} />
+                                    Inventory Management
+                                </h3>
+                                <div className="space-y-4">
+                                    <select
+                                        value={selectedStockId}
+                                        onChange={(e) => setSelectedStockId(e.target.value)}
+                                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:border-[#004B7E] text-xs font-bold appearance-none transition-all"
+                                    >
+                                        <option value="">Select stock item...</option>
+                                        {stockItems.map(item => (
+                                            <option key={item.id} value={item.id} disabled={item.quantity <= 0}>
+                                                {item.name} (฿{item.price.toLocaleString()}) - Balance {item.quantity}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        onClick={handleUseStockItem}
+                                        disabled={isUsingStock || !selectedStockId}
+                                        className="w-full h-14 bg-[#004B7E] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-[#004B7E]/10 hover:bg-[#003a61] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        {isUsingStock ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div> : <Plus size={16} />}
+                                        Add to Order
+                                    </button>
+                                </div>
 
-                    {/* Add Item Form (Manual) */}
-                    {(isMechanic || isAdmin) && order.status !== "Completed" && order.status !== "Paid" && (
-                        <div className="pt-6 border-t border-white/5 space-y-4">
-                            <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-                                <Wrench size={16} />
-                                Add Custom Service / Labor
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <input
-                                    type="text"
-                                    placeholder="Item description (e.g., Oil change)"
-                                    value={newItemDescription}
-                                    onChange={(e) => setNewItemDescription(e.target.value)}
-                                    className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-zinc-500"
-                                />
-                                <input
-                                    type="number"
-                                    placeholder="Price (฿)"
-                                    value={newItemPrice}
-                                    onChange={(e) => setNewItemPrice(e.target.value)}
-                                    className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white placeholder-zinc-500"
-                                />
+                                <div className="pt-6 border-t border-slate-50 space-y-4">
+                                    <h3 className="text-sm font-black text-[#004B7E] uppercase tracking-widest flex items-center gap-2">
+                                        <Wrench size={16} />
+                                        Other Services
+                                    </h3>
+                                    <input
+                                        type="text"
+                                        placeholder="Service description..."
+                                        value={newItemDescription}
+                                        onChange={(e) => setNewItemDescription(e.target.value)}
+                                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:border-[#004B7E] text-xs font-bold transition-all"
+                                    />
+                                    <input
+                                        type="number"
+                                        placeholder="Price (฿)"
+                                        value={newItemPrice}
+                                        onChange={(e) => setNewItemPrice(e.target.value)}
+                                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:border-[#004B7E] text-xs font-bold transition-all"
+                                    />
+                                    <button
+                                        onClick={handleAddItem}
+                                        disabled={isAddingItem}
+                                        className="w-full h-14 bg-slate-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-black transition-all flex items-center justify-center gap-2"
+                                    >
+                                        {isAddingItem ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div> : <Plus size={16} />}
+                                        Add Service Item
+                                    </button>
+                                </div>
                             </div>
-                            <button
-                                onClick={handleAddItem}
-                                disabled={isAddingItem}
-                                className="w-full px-4 py-3 bg-indigo-500 hover:bg-indigo-600 disabled:bg-indigo-500/50 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2"
-                            >
-                                {isAddingItem ? (
-                                    <>
-                                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                                        Adding...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Plus size={16} />
-                                        Add Item
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
         </DashboardLayout>
@@ -415,22 +420,22 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 }
 
 function StatusBadge({ status }: { status: string }) {
-    const configs: Record<string, { color: string; icon: React.ReactNode }> = {
-        Booked: { color: "bg-zinc-500/10 text-zinc-400 ring-zinc-500/20", icon: <Clock size={12} /> },
-        ReviewPending: { color: "bg-violet-500/10 text-violet-400 ring-violet-500/20", icon: <Clock size={12} /> },
-        OfferSent: { color: "bg-indigo-500/10 text-indigo-400 ring-indigo-500/20", icon: <Send size={12} /> },
-        Repairing: { color: "bg-amber-500/10 text-amber-400 ring-amber-500/20", icon: <Wrench size={12} /> },
-        Completed: { color: "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20", icon: <CheckCircle2 size={12} /> },
-        Paid: { color: "bg-blue-500/10 text-blue-400 ring-blue-500/20", icon: <CheckCircle2 size={12} /> },
-        Cancelled: { color: "bg-red-500/10 text-red-400 ring-red-500/20", icon: <XCircle size={12} /> },
+    const configs: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
+        Booked: { color: "bg-slate-50 text-slate-400 border-slate-100", icon: <Clock size={12} />, label: "Booked" },
+        ReviewPending: { color: "bg-blue-50 text-blue-600 border-blue-100", icon: <Clock size={12} />, label: "Review Pending" },
+        OfferSent: { color: "bg-purple-50 text-purple-600 border-purple-100", icon: <Send size={12} />, label: "Quote Sent" },
+        Repairing: { color: "bg-amber-50 text-amber-600 border-amber-100", icon: <Wrench size={12} />, label: "Repairing" },
+        Completed: { color: "bg-green-50 text-green-600 border-green-100", icon: <CheckCircle2 size={12} />, label: "Completed" },
+        Paid: { color: "bg-indigo-50 text-indigo-600 border-indigo-100", icon: <CheckCircle2 size={12} />, label: "Paid" },
+        Cancelled: { color: "bg-red-50 text-red-600 border-red-100", icon: <XCircle size={12} />, label: "Cancelled" },
     };
 
     const config = configs[status] || configs["Booked"];
 
     return (
-        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ring-1 ring-inset ${config.color}`}>
+        <span className={`inline-flex items-center gap-2 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border ${config.color} shadow-sm`}>
             {config.icon}
-            {status}
+            {config.label}
         </span>
     );
 }

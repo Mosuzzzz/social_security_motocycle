@@ -50,7 +50,7 @@ pub enum ServiceOrderStatusEnum {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ServiceOrderModel {
     pub order_id: i32,
-    pub bike_id: i32,
+    pub bike_id: Option<i32>,
     pub customer_id: i32,
     pub status: ServiceOrderStatusEnum,
     pub total_price: bigdecimal::BigDecimal, // Diesel uses BigDecimal for Numeric
@@ -61,7 +61,7 @@ pub struct ServiceOrderModel {
 #[derive(Insertable)]
 #[diesel(table_name = crate::infrastructure::db::schema::service_orders)]
 pub struct NewServiceOrder {
-    pub bike_id: i32,
+    pub bike_id: Option<i32>,
     pub customer_id: i32,
     pub status: ServiceOrderStatusEnum,
     pub total_price: bigdecimal::BigDecimal,

@@ -16,8 +16,14 @@ impl CompositeNotificationGateway {
 impl NotificationGateway for CompositeNotificationGateway {
     async fn send_notification(&self, message: NotificationMessage) -> Result<(), String> {
         for gateway in &self.gateways {
-            // We ignore errors in individual gateways to ensure others still try to send
-            let _ = gateway.send_notification(message.clone()).await;
+            if let Err(e) = gateway.send_notification(message.clone()).await {
+                tracing::error!(
+                    "Notification gateway failed for user {} (order {:?}): {}",
+                    message.user_id,
+                    message.order_id,
+                    e
+                );
+            }
         }
         Ok(())
     }

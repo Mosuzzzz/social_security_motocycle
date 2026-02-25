@@ -2,6 +2,7 @@ use crate::application::use_cases::add_service_item::AddServiceItemUseCase;
 use crate::application::use_cases::add_stock_item::AddStockItemUseCase;
 use crate::application::use_cases::connect_line::ConnectLineUseCase;
 use crate::application::use_cases::create_service_order::CreateServiceOrderUseCase;
+use crate::application::use_cases::delete_service_order::DeleteServiceOrderUseCase;
 use crate::application::use_cases::delete_stock_item::DeleteStockItemUseCase;
 use crate::application::use_cases::disconnect_line::DisconnectLineUseCase;
 use crate::application::use_cases::get_dashboard_stats::GetDashboardStatsUseCase;
@@ -49,5 +50,6 @@ pub struct AppState {
         crate::application::use_cases::list_notifications::ListNotificationsUseCase,
     pub mark_notification_read_use_case:
         crate::application::use_cases::mark_notification_read::MarkNotificationReadUseCase,
+    pub delete_service_order_use_case: DeleteServiceOrderUseCase,
     pub jwt_service: JwtService,
 }

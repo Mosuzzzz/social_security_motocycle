@@ -5,7 +5,7 @@ use serde::Serialize;
 #[derive(Serialize)]
 pub struct ServiceOrderResponse {
     pub id: i32,
-    pub bike_id: i32,
+    pub bike_id: Option<i32>,
     pub customer_id: i32,
     pub status: OrderStatus,
     pub total_price: f64,

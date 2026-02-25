@@ -52,10 +52,15 @@ impl LineNotificationGateway {
 impl NotificationGateway for LineNotificationGateway {
     async fn send_notification(&self, message: NotificationMessage) -> Result<(), String> {
         if message.recipient.is_empty() {
-            // Can't send to LINE without recipient ID, but this is not an error
-            // (e.g. user hasn't linked LINE, but web notification should still work)
+            tracing::warn!(
+                "LINE notification skipped for user {} (order {:?}): no LINE account linked. Title: '{}'",
+                message.user_id,
+                message.order_id,
+                message.title
+            );
             return Ok(());
         }
+
         let url = "https://api.line.me/v2/bot/message/push";
 
         let message_content = if let Some(payload) = message.custom_payload {
@@ -63,7 +68,7 @@ impl NotificationGateway for LineNotificationGateway {
         } else {
             serde_json::json!({
                 "type": "text",
-                "text": format!("{}\n{}", message.title, message.body)
+                "text": format!("{}", message.body)
             })
         };
 
@@ -72,6 +77,17 @@ impl NotificationGateway for LineNotificationGateway {
             "messages": [message_content]
         });
 
+        tracing::info!(
+            "Sending LINE notification to {} (user {}, order {:?}): '{}'",
+            &message.recipient[..8.min(message.recipient.len())],
+            message.user_id,
+            message.order_id,
+            message.title
+        );
+
+        let body_json = serde_json::to_string(&body).unwrap_or_default();
+        tracing::info!("LINE API Payload: {}", body_json);
+
         let response = self
             .client
             .post(url)
@@ -79,18 +95,30 @@ impl NotificationGateway for LineNotificationGateway {
                 "Authorization",
                 format!("Bearer {}", self.channel_access_token),
             )
-            .header("Content-Type", "application/json")
             .json(&body)
             .send()
             .await
-            .map_err(|e| format!("Request failed: {}", e))?;
+            .map_err(|e| {
+                tracing::error!("LINE HTTP request failed: {}", e);
+                format!("Request failed: {}", e)
+            })?;
 
         if !response.status().is_success() {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
+            tracing::error!(
+                "LINE API error for user {}: {} — {}",
+                message.user_id,
+                status,
+                error_text
+            );
             return Err(format!("Line API error: {} - {}", status, error_text));
         }
 
+        tracing::info!(
+            "LINE notification sent successfully to user {}",
+            message.user_id
+        );
         Ok(())
     }
 }

@@ -8,6 +8,8 @@ import { useToast } from "@/context/ToastContext";
 import GuestGuard from "@/components/GuestGuard";
 import { ArrowRight } from "lucide-react";
 
+import LegalDialog from "@/components/LegalDialog";
+
 export default function RegisterPage() {
     const [formData, setFormData] = useState({
         username: "",
@@ -18,6 +20,10 @@ export default function RegisterPage() {
     });
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+
+    // Legal Dialog State
+    const [legalType, setLegalType] = useState<"terms" | "privacy" | null>(null);
+
     const router = useRouter();
     const { showToast } = useToast();
 
@@ -33,7 +39,7 @@ export default function RegisterPage() {
             });
 
             router.push("/login?registered=true");
-            showToast("Account protocol initialized!", "success");
+            showToast("Account created successfully!", "success");
         } catch (err: unknown) {
             setError((err as Error).message || "Registration failed");
         } finally {
@@ -45,114 +51,151 @@ export default function RegisterPage() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const renderLegalContent = () => {
+        if (legalType === "terms") {
+            return (
+                <>
+                    <p className="font-bold">1. Introduction</p>
+                    <p>Welcome to MotoFlow. By accessing our services, you agree to be bound by these terms and conditions.</p>
+                    <p className="font-bold">2. Service Usage</p>
+                    <p>MotoFlow provides motorcycle repair and management services. You agree to use these services only for lawful purposes.</p>
+                    <p className="font-bold">3. User Accounts</p>
+                    <p>You are responsible for maintaining the confidentiality of your account information. Any activity under your account is your responsibility.</p>
+                    <p className="font-bold">4. Liability</p>
+                    <p>MotoFlow is not liable for any indirect, incidental, or consequential damages arising from the use of our services.</p>
+                </>
+            );
+        }
+        return (
+            <>
+                <p className="font-bold">1. Data Collection</p>
+                <p>We collect information you provide directly to us, such as when you create an account or book a service.</p>
+                <p className="font-bold">2. Use of Data</p>
+                <p>We use your data to provide, maintain, and improve our services, and to communicate with you.</p>
+                <p className="font-bold">3. Data Sharing</p>
+                <p>We do not share your personal information with third parties except as required by law or to provide our services.</p>
+                <p className="font-bold">4. Security</p>
+                <p>We take reasonable measures to help protect information about you from loss, theft, and unauthorized access.</p>
+            </>
+        );
+    };
+
     return (
         <GuestGuard>
-            <div className="flex min-h-screen items-center justify-center bg-transparent text-white p-4 py-12">
-                <div className="w-full max-w-2xl animate-in relative z-10">
-                    {/* Logo */}
-                    <div className="flex flex-col items-center mb-10">
-                        <div className="w-16 h-16 rounded-full flex items-center justify-center text-white shrink-0 bg-white/5 border border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1)] mb-6">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path fillRule="evenodd" clipRule="evenodd" d="M12 24C18.6274 24 24 18.6274 24 12C24 5.37258 18.6274 0 12 0C5.37258 0 0 5.37258 0 12C0 18.6274 5.37258 24 12 24ZM11 4C11 3.44772 11.4477 3 12 3C12.5523 3 13 3.44772 13 4V11H20C20.5523 11 21 11.4477 21 12C21 12.5523 20.5523 13 20 13H13V20C13 20.5523 12.5523 21 12 21C11.4477 21 11 20.5523 11 20V13H4C3.44772 13 3 12.5523 3 12C3 11.4477 3.44772 11 4 11H11V4Z" fill="currentColor" />
-                            </svg>
-                        </div>
-                        <h1 className="text-4xl font-medium tracking-tight">Deploy Node</h1>
-                        <p className="text-gray-400 mt-3 font-light">Join the MotoFlow infrastructure</p>
-                    </div>
+            {/* Background override to match light theme */}
+            <div className="fixed inset-0 bg-[#F4F4F4] z-0 pointer-events-none" />
 
-                    {/* Form Card */}
-                    <div className="ios-card p-8 md:p-10 mb-8 border border-white/10 shadow-2xl backdrop-blur-2xl">
-                        <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 font-sans text-slate-900">
+                <main className="w-full max-w-[480px] animate-in py-12">
+                    {/* Centered Registration Card */}
+                    <div className="bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-8 md:p-10 border border-slate-100">
+
+                        {/* Heading */}
+                        <div className="text-center mb-8">
+                            <h1 className="text-[22px] font-bold tracking-tight text-slate-800">Create Account</h1>
+                            <p className="text-[13px] text-slate-500 mt-1 font-medium">Join the MotoFlow repair community</p>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-5">
                             {error && (
-                                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl text-center font-medium backdrop-blur-sm">
+                                <div className="p-3 bg-red-50 text-red-600 text-xs rounded-lg border border-red-100 text-center font-semibold">
                                     {error}
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 gap-5">
                                 <div>
-                                    <label className="block text-[13px] text-gray-300 font-medium mb-2 uppercase tracking-wide">Username</label>
+                                    <label className="block text-[13px] font-bold text-slate-700 mb-2">Username</label>
                                     <input
                                         type="text"
                                         name="username"
                                         value={formData.username}
                                         onChange={handleChange}
-                                        className="ios-input"
-                                        placeholder="johndoe"
+                                        className="w-full h-12 px-4 rounded-lg bg-white border border-slate-200 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-300"
+                                        placeholder="Choose a username"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-[13px] text-gray-300 font-medium mb-2 uppercase tracking-wide">Password</label>
+                                    <label className="block text-[13px] font-bold text-slate-700 mb-2">Password</label>
                                     <input
                                         type="password"
                                         name="password"
                                         value={formData.password}
                                         onChange={handleChange}
-                                        className="ios-input"
-                                        placeholder="••••••••"
+                                        className="w-full h-12 px-4 rounded-lg bg-white border border-slate-200 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-300"
+                                        placeholder="Choose a password"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-[13px] text-gray-300 font-medium mb-2 uppercase tracking-wide">Full Name</label>
+                                    <label className="block text-[13px] font-bold text-slate-700 mb-2">Full Name</label>
                                     <input
                                         type="text"
                                         name="name"
                                         value={formData.name}
                                         onChange={handleChange}
-                                        className="ios-input"
-                                        placeholder="John Doe"
+                                        className="w-full h-12 px-4 rounded-lg bg-white border border-slate-200 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-300"
+                                        placeholder="Enter your full name"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-[13px] text-gray-300 font-medium mb-2 uppercase tracking-wide">Phone Number</label>
+                                    <label className="block text-[13px] font-bold text-slate-700 mb-2">Phone Number</label>
                                     <input
                                         type="tel"
                                         name="phone"
                                         value={formData.phone}
                                         onChange={handleChange}
-                                        className="ios-input"
+                                        className="w-full h-12 px-4 rounded-lg bg-white border border-slate-200 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-300"
                                         placeholder="08X-XXX-XXXX"
                                         required
                                     />
                                 </div>
                             </div>
 
+                            <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
+                                By registering, you agree to our <span onClick={() => setLegalType("terms")} className="underline cursor-pointer hover:text-slate-700">Terms & Conditions</span> and <span onClick={() => setLegalType("privacy")} className="underline cursor-pointer hover:text-slate-700">Privacy Policy</span>.
+                            </p>
+
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full px-6 py-3.5 mt-4 rounded-full bg-white text-black font-semibold hover:bg-gray-200 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-[15px]"
+                                className={`w-full h-12 rounded-lg font-bold text-[15px] transition-all flex items-center justify-center gap-2 mt-2 ${isLoading || !formData.username || !formData.password || !formData.name || !formData.phone
+                                        ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                        : "bg-black text-white hover:bg-slate-800 shadow-md"
+                                    }`}
                             >
                                 {isLoading ? (
-                                    <>
-                                        <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
-                                        Initializing...
-                                    </>
+                                    <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-100 rounded-full animate-spin"></div>
                                 ) : (
-                                    <>
-                                        Deploy Account
-                                        <ArrowRight size={18} />
-                                    </>
+                                    "Continue"
                                 )}
                             </button>
                         </form>
-                    </div>
 
-                    {/* Sign In Link */}
-                    <div className="text-center">
-                        <p className="text-gray-400 text-sm font-light">
-                            Already configured?{" "}
-                            <Link href="/login" className="text-white hover:text-pink-400 transition-colors font-medium border-b border-white/30 hover:border-pink-400 pb-0.5">
-                                Secure Login
-                            </Link>
-                        </p>
+                        {/* Login Redirect */}
+                        <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+                            <p className="text-slate-500 text-[13px]">
+                                Already have an account?{" "}
+                                <Link href="/login" className="text-blue-600 hover:text-blue-700 font-bold">
+                                    Sign In here
+                                </Link>
+                            </p>
+                        </div>
                     </div>
-                </div>
+                </main>
+
+                {/* Legal Dialog */}
+                <LegalDialog
+                    isOpen={!!legalType}
+                    onClose={() => setLegalType(null)}
+                    title={legalType === "terms" ? "Terms & Conditions" : "Privacy Policy"}
+                    content={renderLegalContent()}
+                />
             </div>
         </GuestGuard>
     );

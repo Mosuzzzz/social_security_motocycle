@@ -100,7 +100,7 @@ export default function OrderHistoryPage() {
                                     <td colSpan={4} className="px-8 py-20 text-center text-zinc-500">
                                         <div className="flex flex-col items-center gap-2">
                                             <FileText size={32} className="opacity-10 mb-2" />
-                                            <p className="font-medium italic">No historical records found.</p>
+                                            <p className="font-medium">No historical records found.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -126,8 +126,8 @@ export default function OrderHistoryPage() {
                                         </td>
                                         <td className="px-8 py-6">
                                             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ring-1 ring-inset ${order.status === "Paid"
-                                                    ? "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20"
-                                                    : "bg-amber-500/10 text-amber-400 ring-amber-500/20"
+                                                ? "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20"
+                                                : "bg-amber-500/10 text-amber-400 ring-amber-500/20"
                                                 }`}>
                                                 <CheckCircle2 size={12} />
                                                 {order.status}

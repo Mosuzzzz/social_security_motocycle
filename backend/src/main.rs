@@ -4,6 +4,7 @@ use backend::application::state::AppState;
 use backend::application::use_cases::add_service_item::AddServiceItemUseCase;
 use backend::application::use_cases::connect_line::ConnectLineUseCase;
 use backend::application::use_cases::create_service_order::CreateServiceOrderUseCase;
+use backend::application::use_cases::delete_service_order::DeleteServiceOrderUseCase;
 use backend::application::use_cases::disconnect_line::DisconnectLineUseCase;
 use backend::application::use_cases::get_dashboard_stats::GetDashboardStatsUseCase;
 use backend::application::use_cases::get_profile::GetProfileUseCase;
@@ -139,6 +140,11 @@ async fn main() {
         service_item_repository.clone(),
         service_order_repository.clone(),
     );
+    let delete_service_order_use_case = DeleteServiceOrderUseCase::new(
+        service_order_repository.clone(),
+        user_line_account_repository.clone(),
+        notification_gateway.clone(),
+    );
 
     let add_stock_item_use_case =
         backend::application::use_cases::add_stock_item::AddStockItemUseCase::new(
@@ -158,7 +164,7 @@ async fn main() {
         );
     let use_stock_item_use_case =
         backend::application::use_cases::use_stock_item::UseStockItemUseCase::new(
-            inventory_repository,
+            inventory_repository.clone(),
         );
 
     let mark_notification_read_use_case =
@@ -195,6 +201,7 @@ async fn main() {
         update_profile_use_case,
         list_notifications_use_case,
         mark_notification_read_use_case,
+        delete_service_order_use_case,
         jwt_service: jwt_service.clone(),
     });
 

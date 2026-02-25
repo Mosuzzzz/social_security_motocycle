@@ -341,6 +341,37 @@ async fn get_service_order_detail(
     }
 }
 
+#[derive(serde::Deserialize)]
+struct DeleteServiceOrderBody {
+    reason: Option<String>,
+}
+
+async fn delete_service_order(
+    State(state): State<Arc<AppState>>,
+    user: AuthUser,
+    axum::extract::Path(order_id): axum::extract::Path<i32>,
+    Json(payload): Json<DeleteServiceOrderBody>,
+) -> impl IntoResponse {
+    if user.role != Role::Admin {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(ErrorResponse::from("Only admins can delete orders")),
+        )
+            .into_response();
+    }
+
+    let reason = payload.reason.unwrap_or_else(|| "ไม่ระบุเหตุผล".to_string());
+
+    match state
+        .delete_service_order_use_case
+        .execute(order_id, reason)
+        .await
+    {
+        Ok(_) => StatusCode::NO_CONTENT.into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, Json(ErrorResponse::from(e))).into_response(),
+    }
+}
+
 async fn add_service_item(
     State(state): State<Arc<AppState>>,
     user: AuthUser,
@@ -525,7 +556,10 @@ pub fn create_router() -> Router<Arc<AppState>> {
                 .post(create_service_order)
                 .put(update_order_status),
         )
-        .route("/orders/{id}", get(get_service_order_detail))
+        .route(
+            "/orders/{id}",
+            get(get_service_order_detail).delete(delete_service_order),
+        )
         .route("/orders/items", post(add_service_item))
         .route("/orders/use-stock", post(use_stock_item))
         .route(

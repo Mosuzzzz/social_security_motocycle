@@ -22,7 +22,7 @@ pub struct ServiceItem {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServiceOrder {
     pub id: Option<i32>,
-    pub bike_id: i32,
+    pub bike_id: Option<i32>,
     pub customer_id: i32,
     pub status: OrderStatus,
     pub total_price: f64,
@@ -30,7 +30,7 @@ pub struct ServiceOrder {
 }
 
 impl ServiceOrder {
-    pub fn new_booking(bike_id: i32, customer_id: i32) -> Self {
+    pub fn new_booking(bike_id: Option<i32>, customer_id: i32) -> Self {
         Self {
             id: None,
             bike_id,

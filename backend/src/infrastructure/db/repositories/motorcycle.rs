@@ -64,4 +64,19 @@ impl MotorcycleRepository {
             .load::<MotorcycleModel>(&mut conn)
             .map_err(|e| e.to_string())
     }
+
+    pub async fn find_by_license_and_user(
+        &self,
+        license: &str,
+        user_id_val: i32,
+    ) -> Result<Option<MotorcycleModel>, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+
+        motorcycles::table
+            .filter(motorcycles::license_plate.eq(license))
+            .filter(motorcycles::user_id.eq(user_id_val))
+            .first::<MotorcycleModel>(&mut conn)
+            .optional()
+            .map_err(|e| e.to_string())
+    }
 }
