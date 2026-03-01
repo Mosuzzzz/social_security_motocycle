@@ -18,7 +18,8 @@ import {
     Wrench,
     Send,
     Zap,
-    TrendingUp
+    TrendingUp,
+    Calendar
 } from "lucide-react";
 import ReceiptModal from "@/components/ReceiptModal";
 
@@ -162,7 +163,10 @@ export default function DashboardPage() {
                     onClose={() => setSelectedReceipt(null)}
                 />
             )}
+
+
         </DashboardLayout>
+
     );
 }
 

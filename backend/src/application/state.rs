@@ -17,6 +17,7 @@ use crate::application::use_cases::process_payment::ProcessPaymentUseCase;
 use crate::application::use_cases::promote_user::PromoteUserUseCase;
 use crate::application::use_cases::refresh_token::RefreshTokenUseCase;
 use crate::application::use_cases::register_user::RegisterUserUseCase;
+use crate::application::use_cases::submit_feedback::SubmitFeedbackUseCase;
 use crate::application::use_cases::update_order_status::UpdateOrderStatusUseCase;
 use crate::application::use_cases::update_profile::UpdateProfileUseCase;
 use crate::application::use_cases::update_stock_item::UpdateStockItemUseCase;
@@ -24,7 +25,9 @@ use crate::application::use_cases::use_stock_item::UseStockItemUseCase;
 use crate::infrastructure::security::jwt::service::JwtService;
 
 pub struct AppState {
+    pub submit_feedback_use_case: SubmitFeedbackUseCase,
     pub register_user_use_case: RegisterUserUseCase,
+
     pub promote_user_use_case: PromoteUserUseCase,
     pub create_service_order_use_case: CreateServiceOrderUseCase,
     pub login_use_case: LoginUseCase,

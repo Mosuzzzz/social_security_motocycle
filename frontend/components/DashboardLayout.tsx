@@ -19,7 +19,8 @@ import {
     Home,
     Plus,
     HelpCircle,
-    PieChart
+    PieChart,
+    Calendar
 } from "lucide-react";
 import AuthGuard from "./AuthGuard";
 import NotificationCenter from "./NotificationCenter";
@@ -394,13 +395,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                     {/* Quick Booking FAB */}
                     {user && (
-                        <Link
-                            href="/dashboard/new-booking"
-                            className="fixed bottom-8 right-8 z-50 w-16 h-16 bg-[#004B7E] rounded-2xl flex items-center justify-center text-white shadow-2xl hover:bg-[#003a61] hover:scale-110 hover:-rotate-6 transition-all duration-300"
-                            title="Quick Booking"
-                        >
-                            <Plus size={32} className="text-[#FFD700]" />
-                        </Link>
+                        <div className="fixed bottom-8 right-8 z-50 flex flex-col gap-4">
+                            <Link
+                                href="/dashboard/new-booking"
+                                className="w-16 h-16 bg-[#004B7E] text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform shadow-blue-500/40 relative group"
+                            >
+                                <Calendar size={28} />
+                                <span className="absolute right-full mr-4 bg-white text-slate-800 px-4 py-2 rounded-xl shadow-xl text-xs font-black opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Book Repair</span>
+                            </Link>
+                        </div>
                     )}
 
                 </main>

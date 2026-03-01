@@ -1,6 +1,9 @@
 use axum::Extension;
 use axum::http::{HeaderValue, Method};
 use backend::application::state::AppState;
+use backend::application::use_cases::submit_feedback::SubmitFeedbackUseCase;
+use backend::infrastructure::db::repositories::feedback::FeedbackRepository;
+
 use backend::application::use_cases::add_service_item::AddServiceItemUseCase;
 use backend::application::use_cases::connect_line::ConnectLineUseCase;
 use backend::application::use_cases::create_service_order::CreateServiceOrderUseCase;
@@ -66,6 +69,7 @@ async fn main() {
         backend::infrastructure::db::repositories::notification::NotificationRepository::new(
             pool.clone(),
         );
+    let feedback_repository = FeedbackRepository::new(pool.clone());
 
     // Gateways
     let omise_gateway: Arc<dyn PaymentGateway + Send + Sync> = Arc::new(OmiseGateway::new());
@@ -145,6 +149,7 @@ async fn main() {
         user_line_account_repository.clone(),
         notification_gateway.clone(),
     );
+    let submit_feedback_use_case = SubmitFeedbackUseCase::new(feedback_repository.clone());
 
     let add_stock_item_use_case =
         backend::application::use_cases::add_stock_item::AddStockItemUseCase::new(
@@ -177,7 +182,9 @@ async fn main() {
         );
 
     let app_state = Arc::new(AppState {
+        submit_feedback_use_case,
         register_user_use_case,
+
         promote_user_use_case,
         create_service_order_use_case,
         login_use_case,

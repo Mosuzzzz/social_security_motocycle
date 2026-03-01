@@ -23,6 +23,21 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    feedbacks (feedback_id) {
+        feedback_id -> Int4,
+        user_id -> Int4,
+        #[max_length = 255]
+        name -> Varchar,
+        #[max_length = 255]
+        email -> Varchar,
+        #[max_length = 255]
+        phone -> Varchar,
+        message -> Text,
+        created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     motorcycles (bike_id) {
         bike_id -> Int4,
         #[max_length = 255]
@@ -160,6 +175,7 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(feedbacks -> users (user_id));
 diesel::joinable!(motorcycles -> users (user_id));
 diesel::joinable!(notifications -> service_orders (order_id));
 diesel::joinable!(notifications -> users (user_id));
@@ -172,6 +188,7 @@ diesel::joinable!(service_orders -> motorcycles (bike_id));
 diesel::joinable!(user_line_accounts -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    feedbacks,
     motorcycles,
     notifications,
     payments,

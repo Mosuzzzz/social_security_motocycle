@@ -8,10 +8,12 @@ use crate::application::use_cases::process_payment::ProcessPaymentCommand;
 use crate::application::use_cases::promote_user::PromoteUserCommand;
 use crate::application::use_cases::refresh_token::RefreshTokenCommand;
 use crate::application::use_cases::register_user::RegisterUserCommand;
+use crate::application::use_cases::submit_feedback::SubmitFeedbackCommand;
 use crate::application::use_cases::update_order_status::UpdateOrderStatusCommand;
 use crate::application::use_cases::update_profile::UpdateProfileCommand;
 use crate::application::use_cases::update_stock_item::UpdateStockItemCommand;
 use crate::application::use_cases::use_stock_item::UseStockItemCommand;
+
 use crate::domain::user::entity::Role;
 use crate::infrastructure::http::middleware::auth::AuthUser;
 use axum::{
@@ -108,6 +110,17 @@ async fn promote_user(
 
     match state.promote_user_use_case.execute(payload).await {
         Ok(result) => (StatusCode::OK, Json(result)).into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, Json(ErrorResponse::from(e))).into_response(),
+    }
+}
+
+async fn submit_feedback(
+    State(state): State<Arc<AppState>>,
+    Json(payload): Json<SubmitFeedbackCommand>,
+) -> impl IntoResponse {
+    tracing::info!("Submitting feedback from: {}", payload.email);
+    match state.submit_feedback_use_case.execute(payload).await {
+        Ok(result) => (StatusCode::CREATED, Json(result)).into_response(),
         Err(e) => (StatusCode::BAD_REQUEST, Json(ErrorResponse::from(e))).into_response(),
     }
 }
@@ -545,6 +558,7 @@ pub fn create_router() -> Router<Arc<AppState>> {
         .route("/login", post(login))
         .route("/auth/refresh", post(refresh_token))
         .route("/auth/logout", post(logout))
+        .route("/feedback", post(submit_feedback))
         .route("/ping", get(|| async { "pong" }));
 
     // Protected API routes

@@ -193,3 +193,25 @@ pub struct NewNotification {
     pub message: String,
     pub status: NotificationStatusEnum,
 }
+#[derive(Queryable, Selectable, Debug, Clone, Serialize, Deserialize)]
+#[diesel(table_name = crate::infrastructure::db::schema::feedbacks)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct FeedbackModel {
+    pub feedback_id: i32,
+    pub user_id: i32,
+    pub name: String,
+    pub email: String,
+    pub phone: String,
+    pub message: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = crate::infrastructure::db::schema::feedbacks)]
+pub struct NewFeedback {
+    pub user_id: i32,
+    pub name: String,
+    pub email: String,
+    pub phone: String,
+    pub message: String,
+}

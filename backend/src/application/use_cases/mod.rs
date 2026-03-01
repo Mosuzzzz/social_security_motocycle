@@ -1,5 +1,6 @@
 pub mod add_service_item;
 pub mod add_stock_item;
+pub mod checkout_cart;
 pub mod connect_line;
 pub mod create_service_order;
 pub mod delete_service_order;
@@ -19,6 +20,7 @@ pub mod process_payment;
 pub mod promote_user;
 pub mod refresh_token;
 pub mod register_user;
+pub mod submit_feedback;
 pub mod update_order_status;
 pub mod update_profile;
 pub mod update_stock_item;

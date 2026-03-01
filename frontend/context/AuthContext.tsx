@@ -10,7 +10,10 @@ interface User {
     username: string;
     role: "Admin" | "Customer" | "Mechanic";
     avatar_url?: string;
+    name?: string;
+    phone?: string;
 }
+
 
 interface AuthContextType {
     user: User | null;

@@ -23,6 +23,8 @@ pub struct LoginResult {
     pub username: String,
     pub role: Role,
     pub avatar_url: Option<String>,
+    pub name: String,
+    pub phone: String,
 }
 
 #[derive(Clone)]
@@ -114,6 +116,8 @@ impl LoginUseCase {
             username: user.username,
             role: user.role,
             avatar_url,
+            name: user.name,
+            phone: user.phone,
         })
     }
 }

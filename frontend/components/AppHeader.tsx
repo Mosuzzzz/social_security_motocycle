@@ -21,15 +21,8 @@ export default function AppHeader() {
             <header className="bg-[#FFD700] py-4 px-6 md:px-12 shadow-md sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto flex items-center justify-between gap-8">
                     {/* Logo Group */}
-                    <Link href="/" className="flex items-center gap-3 shrink-0 group">
-                        <div className="bg-[#004B7E] p-2 rounded-xl transform group-hover:rotate-12 transition-transform shadow-lg">
-                            <Wrench className="text-[#FFD700]" size={24} />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-2xl font-black text-[#004B7E] tracking-tighter leading-none uppercase">Pragun</span>
-                            <span className="text-[10px] font-bold text-[#004B7E]/60 uppercase tracking-[0.2em] leading-none mt-1">การซ่อม - Service Center</span>
-                        </div>
-                    </Link>
+                    <div className="shrink-0"></div>
+
 
                     {/* Desktop Search Bar REMOVED */}
 

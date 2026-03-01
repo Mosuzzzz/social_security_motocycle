@@ -1,3 +1,4 @@
+pub mod feedback;
 pub mod inventory;
 pub mod motorcycle;
 pub mod notification;
