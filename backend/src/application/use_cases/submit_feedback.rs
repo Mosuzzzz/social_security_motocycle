@@ -33,10 +33,8 @@ impl SubmitFeedbackUseCase {
         &self,
         command: SubmitFeedbackCommand,
     ) -> Result<SubmitFeedbackResult, String> {
-        let user_id = command.user_id.ok_or("User ID is required for feedback")?;
-
         let new_feedback = NewFeedback {
-            user_id,
+            user_id: command.user_id,
             name: command.name,
             email: command.email,
             phone: command.phone,

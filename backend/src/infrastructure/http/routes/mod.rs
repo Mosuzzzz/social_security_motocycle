@@ -125,6 +125,25 @@ async fn submit_feedback(
     }
 }
 
+async fn list_feedbacks(State(state): State<Arc<AppState>>, user: AuthUser) -> impl IntoResponse {
+    if user.role != Role::Admin {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(ErrorResponse::from("Only admins can view feedback")),
+        )
+            .into_response();
+    }
+
+    match state.list_feedbacks_use_case.execute().await {
+        Ok(result) => (StatusCode::OK, Json(result)).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::from(e)),
+        )
+            .into_response(),
+    }
+}
+
 async fn create_service_order(
     State(state): State<Arc<AppState>>,
     user: AuthUser,
@@ -583,6 +602,7 @@ pub fn create_router() -> Router<Arc<AppState>> {
                 .put(update_stock_item),
         )
         .route("/stock/{id}", delete(delete_stock_item))
+        .route("/feedback", get(list_feedbacks))
         .route("/payments", post(process_payment))
         .route("/users", get(list_users))
         .route("/stats", get(get_dashboard_stats))

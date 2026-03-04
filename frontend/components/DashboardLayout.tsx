@@ -20,7 +20,8 @@ import {
     Plus,
     HelpCircle,
     PieChart,
-    Calendar
+    Calendar,
+    MessageSquare
 } from "lucide-react";
 import AuthGuard from "./AuthGuard";
 import NotificationCenter from "./NotificationCenter";
@@ -65,6 +66,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 { name: "Orders", icon: <FileText size={20} />, href: "/dashboard/orders" },
                 { name: "Stock", icon: <Wrench size={20} />, href: "/dashboard/stock" },
                 { name: "Reports", icon: <PieChart size={20} />, href: "/dashboard/reports" },
+                { name: "Feedback", icon: <MessageSquare size={20} />, href: "/dashboard/feedback" },
                 { name: "Support", icon: <HelpCircle size={20} />, href: "/dashboard/support" },
             ],
             Mechanic: [
@@ -292,7 +294,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             >
                                 <Menu size={24} />
                             </button>
-                            <div className="flex flex-col md:block hidden">
+                            <div className="hidden md:flex flex-col">
                                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mb-1 block">Pragunการซ่อม Terminal</span>
                                 <h2 className="text-xl font-black text-[#004B7E] uppercase tracking-tighter">
                                     {currentMenu.find(item => item.href === pathname)?.name || (pathname === "/dashboard/settings" ? "Settings" : "Dashboard")}

@@ -25,7 +25,7 @@ pub mod sql_types {
 diesel::table! {
     feedbacks (feedback_id) {
         feedback_id -> Int4,
-        user_id -> Int4,
+        user_id -> Nullable<Int4>,
         #[max_length = 255]
         name -> Varchar,
         #[max_length = 255]

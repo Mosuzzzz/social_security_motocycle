@@ -34,6 +34,7 @@ export default function AppFooter() {
                         <li><Link href="/" className="hover:text-white transition-colors">Home</Link></li>
                         <li><Link href="/dashboard/new-booking" className="hover:text-white transition-colors">Book Repair</Link></li>
                         <li><Link href="#" className="hover:text-white transition-colors">All Spare Parts</Link></li>
+                        <li><Link href="/#feedback" className="hover:text-white transition-colors">Send Feedback</Link></li>
                         <li><Link href="/dashboard/support" className="hover:text-white transition-colors">Support Center</Link></li>
                     </ul>
                 </div>

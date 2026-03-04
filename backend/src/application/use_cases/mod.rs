@@ -9,6 +9,7 @@ pub mod disconnect_line;
 pub mod get_dashboard_stats;
 pub mod get_profile;
 pub mod get_service_order_detail;
+pub mod list_feedbacks;
 pub mod list_notifications;
 pub mod list_service_orders;
 pub mod list_stock_items;

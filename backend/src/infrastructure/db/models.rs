@@ -198,7 +198,7 @@ pub struct NewNotification {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct FeedbackModel {
     pub feedback_id: i32,
-    pub user_id: i32,
+    pub user_id: Option<i32>,
     pub name: String,
     pub email: String,
     pub phone: String,
@@ -209,7 +209,7 @@ pub struct FeedbackModel {
 #[derive(Insertable)]
 #[diesel(table_name = crate::infrastructure::db::schema::feedbacks)]
 pub struct NewFeedback {
-    pub user_id: i32,
+    pub user_id: Option<i32>,
     pub name: String,
     pub email: String,
     pub phone: String,

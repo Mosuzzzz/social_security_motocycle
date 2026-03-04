@@ -5,11 +5,12 @@ import { useAuth } from "@/context/AuthContext";
 import {
   MapPin, ChevronRight, ChevronLeft,
   Settings, Wrench, ShieldCheck, Clock, Calendar,
-  Gauge, Disc, CircleDot, Droplets, Battery
+  Gauge, Disc, CircleDot, Droplets, Battery, Phone
 } from "lucide-react";
 import React from "react";
 import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
+import HomepageFeedbackForm from "@/components/HomepageFeedbackForm";
 
 export default function Home() {
   const { user } = useAuth();
@@ -158,6 +159,39 @@ export default function Home() {
             <ShieldCheck className="mx-auto text-[#FFD700]" size={48} />
             <h5 className="text-lg font-black">Service Warranty</h5>
             <p className="text-sm opacity-60 font-medium">Up to 6 months warranty for peace of mind.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Feedback Section */}
+      <section id="feedback" className="px-4 md:px-12 py-24 max-w-5xl mx-auto w-full">
+        <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100 flex flex-col md:flex-row">
+          {/* Left Decorative Side */}
+          <div className="md:w-1/3 bg-[#004B7E] p-12 text-white flex flex-col justify-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 opacity-10 blur-2xl w-40 h-40 bg-white rounded-full translate-x-10 -translate-y-10"></div>
+            <div className="relative z-10">
+              <h3 className="text-3xl font-black mb-4 leading-tight uppercase tracking-tighter">Your Feedback <br /><span className="text-[#FFD700]">Matters</span></h3>
+              <p className="text-white/60 text-sm font-medium leading-relaxed">Helping us improve our service every day. We read every message.</p>
+            </div>
+            <div className="mt-12 space-y-4 relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/10">
+                  <Phone size={14} className="text-[#FFD700]" />
+                </div>
+                <span className="text-xs font-bold">044-xxx-xxxx</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/10">
+                  <MapPin size={14} className="text-[#FFD700]" />
+                </div>
+                <span className="text-xs font-bold">Nakhon Ratchasima, TH</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Form Side */}
+          <div className="md:w-2/3 p-10 md:p-16">
+            <HomepageFeedbackForm />
           </div>
         </div>
       </section>

@@ -8,6 +8,7 @@ use crate::application::use_cases::disconnect_line::DisconnectLineUseCase;
 use crate::application::use_cases::get_dashboard_stats::GetDashboardStatsUseCase;
 use crate::application::use_cases::get_profile::GetProfileUseCase;
 use crate::application::use_cases::get_service_order_detail::GetServiceOrderDetailUseCase;
+use crate::application::use_cases::list_feedbacks::ListFeedbacksUseCase;
 use crate::application::use_cases::list_service_orders::ListServiceOrdersUseCase;
 use crate::application::use_cases::list_stock_items::ListStockItemsUseCase;
 use crate::application::use_cases::list_users::ListUsersUseCase;
@@ -26,6 +27,7 @@ use crate::infrastructure::security::jwt::service::JwtService;
 
 pub struct AppState {
     pub submit_feedback_use_case: SubmitFeedbackUseCase,
+    pub list_feedbacks_use_case: ListFeedbacksUseCase,
     pub register_user_use_case: RegisterUserUseCase,
 
     pub promote_user_use_case: PromoteUserUseCase,

@@ -12,6 +12,7 @@ use backend::application::use_cases::disconnect_line::DisconnectLineUseCase;
 use backend::application::use_cases::get_dashboard_stats::GetDashboardStatsUseCase;
 use backend::application::use_cases::get_profile::GetProfileUseCase;
 use backend::application::use_cases::get_service_order_detail::GetServiceOrderDetailUseCase;
+use backend::application::use_cases::list_feedbacks::ListFeedbacksUseCase;
 use backend::application::use_cases::list_service_orders::ListServiceOrdersUseCase;
 use backend::application::use_cases::list_users::ListUsersUseCase;
 use backend::application::use_cases::login::LoginUseCase;
@@ -150,6 +151,7 @@ async fn main() {
         notification_gateway.clone(),
     );
     let submit_feedback_use_case = SubmitFeedbackUseCase::new(feedback_repository.clone());
+    let list_feedbacks_use_case = ListFeedbacksUseCase::new(feedback_repository.clone());
 
     let add_stock_item_use_case =
         backend::application::use_cases::add_stock_item::AddStockItemUseCase::new(
@@ -183,6 +185,7 @@ async fn main() {
 
     let app_state = Arc::new(AppState {
         submit_feedback_use_case,
+        list_feedbacks_use_case,
         register_user_use_case,
 
         promote_user_use_case,
