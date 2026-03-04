@@ -125,28 +125,24 @@ export default function ReportsPage() {
                     <MetricCard
                         title="Total Revenue"
                         value={`฿${stats?.total_revenue.toLocaleString()}`}
-                        change="+12.5%"
                         icon={<DollarSign size={24} />}
                         color="emerald"
                     />
                     <MetricCard
                         title="Active Orders"
                         value={stats?.total_orders.toString() || "0"}
-                        change="+4"
                         icon={<Bike size={24} />}
                         color="blue"
                     />
                     <MetricCard
                         title="Registered Users"
                         value={stats?.total_users.toString() || "0"}
-                        change="+18"
                         icon={<Users size={24} />}
                         color="purple"
                     />
                     <MetricCard
                         title="Conversion Rate"
-                        value="64.2%"
-                        change="+2.1%"
+                        value="64.2"
                         icon={<ArrowUpRight size={24} />}
                         color="gold"
                     />
@@ -193,7 +189,7 @@ export default function ReportsPage() {
                                 <p className="text-white/60 font-bold text-sm leading-relaxed">
                                     {stats && (stats.total_revenue >= 50000
                                         ? "Congratulations! You've hit your monthly target!"
-                                        : `You've achieved ${Math.round((stats.total_revenue / 50000) * 100)}% of your primary ฿50k goal.`)}
+                                        : `Progressing towards your primary ฿50k monthly goal.`)}
                                 </p>
                             </div>
                             <div className="pt-4">
@@ -224,9 +220,6 @@ export default function ReportsPage() {
                             <div key={brand} className="p-8 bg-slate-50/50 rounded-3xl border border-slate-100 space-y-6 hover:bg-white hover:shadow-xl transition-all group">
                                 <div className="flex items-center justify-between">
                                     <span className="text-lg font-black text-slate-800 uppercase tracking-tight">{brand}</span>
-                                    <span className="text-[10px] font-black px-3 py-1 bg-[#004B7E]/5 rounded-lg text-[#004B7E] uppercase tracking-widest ring-1 ring-[#004B7E]/10">
-                                        {((count / totalBikes) * 100).toFixed(1)}%
-                                    </span>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-3xl font-black text-[#004B7E] tracking-tighter">{count}</p>
@@ -250,12 +243,11 @@ export default function ReportsPage() {
 interface MetricCardProps {
     title: string;
     value: string;
-    change: string;
     icon: React.ReactNode;
     color: "emerald" | "blue" | "purple" | "gold";
 }
 
-function MetricCard({ title, value, change, icon, color }: MetricCardProps) {
+function MetricCard({ title, value, icon, color }: MetricCardProps) {
     const colors: Record<string, string> = {
         emerald: "text-emerald-600 bg-emerald-50 border-emerald-100",
         blue: "text-blue-600 bg-blue-50 border-blue-100",
@@ -269,9 +261,6 @@ function MetricCard({ title, value, change, icon, color }: MetricCardProps) {
                 <div className={`p-4 rounded-2xl border ${colors[color]} shadow-sm`}>
                     {icon}
                 </div>
-                <span className={`text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest ${change.startsWith("+") ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"}`}>
-                    {change}
-                </span>
             </div>
             <div className="space-y-2">
                 <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">{title}</p>
