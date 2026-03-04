@@ -26,11 +26,14 @@ interface Stats {
 export default function ReportsPage() {
     const [stats, setStats] = useState<Stats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [days, setDays] = useState<number | null>(30);
 
     useEffect(() => {
         const fetchStats = async () => {
+            setIsLoading(true);
             try {
-                const data = await apiFetch("/api/stats");
+                const url = days ? `/api/stats?days=${days}` : "/api/stats";
+                const data = await apiFetch(url);
                 setStats(data);
             } catch (err) {
                 console.error("Failed to fetch statistics", err);
@@ -40,7 +43,7 @@ export default function ReportsPage() {
         };
 
         fetchStats();
-    }, []);
+    }, [days]);
 
     if (isLoading) {
         return (
@@ -72,11 +75,45 @@ export default function ReportsPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 transition-all text-[10px] font-black uppercase tracking-widest shadow-sm">
-                            <Calendar size={18} className="text-slate-400" />
-                            Last 30 Days
-                        </button>
-                        <button className="flex items-center gap-2 px-6 py-3 bg-[#004B7E] text-white rounded-xl hover:bg-[#003a61] transition-all text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#004B7E]/20">
+                        <div className="relative">
+                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                            <select
+                                id="report-time-filter"
+                                value={days?.toString() || "all"}
+                                onChange={(e) => setDays(e.target.value === "all" ? null : parseInt(e.target.value))}
+                                className="pl-12 pr-10 py-3 bg-white border border-slate-100 rounded-xl outline-none focus:border-[#004B7E]/30 focus:shadow-lg transition-all text-[10px] font-black uppercase tracking-widest shadow-sm appearance-none cursor-pointer"
+                            >
+                                <option value="7">Last 7 Days</option>
+                                <option value="30">Last 30 Days</option>
+                                <option value="90">Last 90 Days</option>
+                                <option value="all">All Time</option>
+                            </select>
+                        </div>
+
+                        <button
+                            id="generate-csv-btn"
+                            onClick={() => {
+                                if (!stats) return;
+                                let csvContent = "data:text/csv;charset=utf-8,"
+                                    + "Analysis Category,Data Point,Metric Value\n"
+                                    + "Financial Overview,Total Revenue," + stats.total_revenue + "\n"
+                                    + "Order Metrics,Total Orders," + stats.total_orders + "\n"
+                                    + "User Metrics,Total Registered Users," + stats.total_users + "\n";
+
+                                Object.entries(stats.status_distribution).forEach(([status, count]) => {
+                                    csvContent += `Order Status Breakdown,${status},${count}\n`;
+                                });
+
+                                const encodedUri = encodeURI(csvContent);
+                                const link = document.createElement("a");
+                                link.setAttribute("href", encodedUri);
+                                link.setAttribute("download", `performance_report_${days || 'full_term'}.csv`);
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                            }}
+                            className="flex items-center gap-2 px-6 py-3 bg-[#004B7E] text-white rounded-xl hover:bg-[#003a61] transition-all text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#004B7E]/20"
+                        >
                             <Filter size={18} />
                             Generate CSV
                         </button>
@@ -135,8 +172,8 @@ export default function ReportsPage() {
                                     </div>
                                     <div className="h-4 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
                                         <div
-                                            className="h-full bg-gradient-to-r from-[#004B7E] to-[#007AFF] rounded-full transition-all duration-1500 ease-out"
-                                            style={{ width: `${(count / stats.total_orders) * 100}%` }}
+                                            className="h-full bg-linear-to-r from-[#004B7E] to-[#007AFF] rounded-full transition-all duration-1500 ease-out"
+                                            style={{ width: `${stats.total_orders > 0 ? (count / stats.total_orders) * 100 : 0}%` }}
                                         ></div>
                                     </div>
                                 </div>
@@ -153,12 +190,19 @@ export default function ReportsPage() {
                             </div>
                             <div className="space-y-2">
                                 <h3 className="text-2xl font-black uppercase tracking-tight">Revenue Goal</h3>
-                                <p className="text-white/60 font-bold text-sm leading-relaxed">You&apos;re at 82% of your monthly target. Keep it up!</p>
+                                <p className="text-white/60 font-bold text-sm leading-relaxed">
+                                    {stats && (stats.total_revenue >= 50000
+                                        ? "Congratulations! You've hit your monthly target!"
+                                        : `You've achieved ${Math.round((stats.total_revenue / 50000) * 100)}% of your primary ฿50k goal.`)}
+                                </p>
                             </div>
                             <div className="pt-4">
                                 <div className="text-4xl font-black mb-6 tracking-tighter">฿{stats && (stats.total_revenue).toLocaleString()} <span className="text-lg opacity-40 font-normal tracking-normal ml-2">/ ฿50k</span></div>
                                 <div className="h-4 bg-black/20 rounded-full overflow-hidden border border-white/5">
-                                    <div className="h-full bg-[#FFD700] rounded-full w-[82%] shadow-lg shadow-[#FFD700]/20"></div>
+                                    <div
+                                        className="h-full bg-[#FFD700] rounded-full shadow-lg shadow-[#FFD700]/20 transition-all duration-1000"
+                                        style={{ width: `${stats ? Math.min((stats.total_revenue / 50000) * 100, 100) : 0}%` }}
+                                    ></div>
                                 </div>
                             </div>
                         </div>
@@ -203,8 +247,16 @@ export default function ReportsPage() {
     );
 }
 
-function MetricCard({ title, value, change, icon, color }: any) {
-    const colors: any = {
+interface MetricCardProps {
+    title: string;
+    value: string;
+    change: string;
+    icon: React.ReactNode;
+    color: "emerald" | "blue" | "purple" | "gold";
+}
+
+function MetricCard({ title, value, change, icon, color }: MetricCardProps) {
+    const colors: Record<string, string> = {
         emerald: "text-emerald-600 bg-emerald-50 border-emerald-100",
         blue: "text-blue-600 bg-blue-50 border-blue-100",
         purple: "text-purple-600 bg-purple-50 border-purple-100",

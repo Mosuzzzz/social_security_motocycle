@@ -40,6 +40,7 @@ impl CheckoutUseCase {
             status: OrderStatus::Booked,
             total_price: 0.0,
             items: Vec::new(),
+            created_at: Some(chrono::Utc::now()),
         };
 
         let created_order = self.order_repo.create_order(order, customer_id).await?;

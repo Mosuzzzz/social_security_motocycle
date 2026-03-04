@@ -34,8 +34,25 @@ impl GetDashboardStatsUseCase {
         }
     }
 
-    pub async fn execute(&self) -> Result<DashboardStatsResult, String> {
-        let orders = self.order_repo.list_orders().await?;
+    pub async fn execute(&self, days: Option<i64>) -> Result<DashboardStatsResult, String> {
+        let all_orders = self.order_repo.list_orders().await?;
+
+        let cutoff_date = days.map(|d| chrono::Utc::now() - chrono::Duration::days(d));
+        let orders: Vec<_> = all_orders
+            .into_iter()
+            .filter(|o| {
+                if let Some(cutoff) = cutoff_date {
+                    if let Some(created_at) = o.created_at {
+                        created_at >= cutoff
+                    } else {
+                        true
+                    }
+                } else {
+                    true
+                }
+            })
+            .collect();
+
         let users = self.user_repo.list_users().await?;
         let motorcycles = self.motorcycle_repo.find_all().await?;
 

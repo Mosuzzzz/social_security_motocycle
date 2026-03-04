@@ -18,7 +18,7 @@ use crate::domain::user::entity::Role;
 use crate::infrastructure::http::middleware::auth::AuthUser;
 use axum::{
     Router,
-    extract::{Json, State},
+    extract::{Json, Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, post},
@@ -254,8 +254,14 @@ async fn update_order_status(
     }
 }
 
+#[derive(serde::Deserialize)]
+pub struct StatsQuery {
+    pub days: Option<i64>,
+}
+
 async fn get_dashboard_stats(
     State(state): State<Arc<AppState>>,
+    Query(query): Query<StatsQuery>,
     user: AuthUser,
 ) -> impl IntoResponse {
     if user.role != Role::Admin {
@@ -266,7 +272,7 @@ async fn get_dashboard_stats(
             .into_response();
     }
 
-    match state.get_dashboard_stats_use_case.execute().await {
+    match state.get_dashboard_stats_use_case.execute(query.days).await {
         Ok(result) => (StatusCode::OK, Json(result)).into_response(),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,

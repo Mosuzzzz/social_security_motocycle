@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
     BarChart2,
@@ -33,8 +34,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // Desktop collapse
     const searchInputRef = useRef<HTMLInputElement>(null);
 
+    interface SearchResult {
+        id: string;
+        type: string;
+        title: string;
+        subtitle?: string;
+        href: string;
+        icon?: React.ReactNode;
+    }
+
     const [searchQuery, setSearchQuery] = useState("");
-    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
 
@@ -67,7 +77,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 { name: "Stock", icon: <Wrench size={20} />, href: "/dashboard/stock" },
                 { name: "Reports", icon: <PieChart size={20} />, href: "/dashboard/reports" },
                 { name: "Feedback", icon: <MessageSquare size={20} />, href: "/dashboard/feedback" },
-                { name: "Support", icon: <HelpCircle size={20} />, href: "/dashboard/support" },
             ],
             Mechanic: [
                 { name: "Overview", icon: <BarChart2 size={20} />, href: "/dashboard" },
@@ -96,7 +105,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const fetchSearch = async () => {
             setIsSearching(true);
             try {
-                const results: any[] = [];
+                const results: SearchResult[] = [];
 
                 // 1. Search Menu Items
                 currentMenu.forEach(item => {
@@ -149,7 +158,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 }
                             });
                         }
-                    } catch (e) {
+                    } catch {
                         // silently ignore api fetch errors during search
                     }
                 }
@@ -381,7 +390,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 </div>
                                 <div className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center font-black text-[#004B7E] overflow-hidden shadow-sm bg-slate-50 group-hover:border-[#FFD700] transition-colors">
                                     {user?.avatar_url ? (
-                                        <img src={user.avatar_url} alt={user.username} className="w-full h-full object-cover" />
+                                        <Image
+                                            src={user.avatar_url}
+                                            alt={user.username}
+                                            width={40}
+                                            height={40}
+                                            className="w-full h-full object-cover"
+                                        />
                                     ) : (
                                         user?.username?.charAt(0).toUpperCase() || "U"
                                     )}

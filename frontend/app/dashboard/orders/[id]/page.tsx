@@ -160,15 +160,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     };
 
     const handleComplete = () => {
-        const priceStr = prompt("Enter total service price (฿):", order?.total_price.toString());
-        if (priceStr !== null) {
-            const price = parseFloat(priceStr);
-            if (isNaN(price)) {
-                showToast("Invalid price entered", "error");
-                return;
-            }
-            updateStatus("Completed", price);
-        }
+        if (!order) return;
+        const total = order.items.reduce((sum, item) => sum + item.price, 0);
+        updateStatus("Completed", total);
     };
 
     if (isLoading) {

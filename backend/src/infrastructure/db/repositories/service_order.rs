@@ -199,6 +199,7 @@ impl ServiceOrderRepository {
             status,
             total_price,
             items: Vec::new(),
+            created_at: Some(model.created_at),
         }
     }
 }

@@ -27,6 +27,7 @@ pub struct ServiceOrder {
     pub status: OrderStatus,
     pub total_price: f64,
     pub items: Vec<ServiceItem>,
+    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 impl ServiceOrder {
@@ -38,6 +39,7 @@ impl ServiceOrder {
             status: OrderStatus::Booked,
             total_price: 0.0,
             items: Vec::new(),
+            created_at: Some(chrono::Utc::now()),
         }
     }
 
