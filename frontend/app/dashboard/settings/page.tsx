@@ -295,7 +295,7 @@ export default function SettingsPage() {
                                 <div className="flex gap-3">
                                     {profile?.line_connected && isFriend === false && (
                                         <a
-                                            href="https://line.me/R/ti/p/@362xai"
+                                            href="https://line.me/R/ti/p/@362xaifs"
                                             target="_blank"
                                             rel="noreferrer"
                                             className="px-8 py-3 bg-[#06C755] text-white font-black text-xs rounded-xl hover:bg-[#05a647] transition-all uppercase tracking-widest flex items-center gap-2"
