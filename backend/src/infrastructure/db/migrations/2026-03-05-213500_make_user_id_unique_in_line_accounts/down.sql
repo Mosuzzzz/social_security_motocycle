@@ -1,0 +1,1 @@
+ALTER TABLE user_line_accounts DROP CONSTRAINT IF EXISTS user_line_accounts_user_id_unique;
