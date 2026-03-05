@@ -228,8 +228,18 @@ async fn main() {
         jwt_service: jwt_service.clone(),
     });
 
+    let frontend_url =
+        std::env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
+
+    let allowed_origins: Vec<HeaderValue> = vec![
+        "http://localhost:3000".parse().unwrap(),
+        frontend_url
+            .parse()
+            .unwrap_or_else(|_| "http://localhost:3000".parse().unwrap()),
+    ];
+
     let cors = CorsLayer::new()
-        .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
+        .allow_origin(allowed_origins)
         .allow_methods([
             Method::GET,
             Method::POST,

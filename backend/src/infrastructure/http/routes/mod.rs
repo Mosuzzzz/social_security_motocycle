@@ -725,6 +725,12 @@ pub fn create_router() -> Router<Arc<AppState>> {
         .route("/upload", post(upload_file))
         .route("/ping", get(|| async { "pong" }));
 
+    // Health check route (outside /api prefix for Railway)
+    let health_route = Router::new().route(
+        "/health",
+        get(|| async { (StatusCode::OK, Json(serde_json::json!({ "status": "ok" }))) }),
+    );
+
     // Protected API routes
     let protected_routes = Router::new()
         .route("/promote", post(promote_user))
@@ -762,6 +768,7 @@ pub fn create_router() -> Router<Arc<AppState>> {
         .layer(auth_middleware);
 
     Router::new()
+        .merge(health_route)
         .nest("/api", public_routes.merge(protected_routes))
         .nest_service("/uploads", ServeDir::new("uploads"))
 }
