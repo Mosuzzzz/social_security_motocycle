@@ -186,6 +186,21 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         }
     };
 
+    const handleRemoveItem = async (itemId: number) => {
+        if (!confirm("Are you sure you want to remove this item?")) return;
+
+        try {
+            await apiFetch(`/api/orders/items/${itemId}`, {
+                method: "DELETE",
+            });
+            showToast("Item removed successfully", "success");
+            fetchOrderDetail();
+            fetchStockItems();
+        } catch (err: unknown) {
+            showToast((err as Error).message || "Failed to remove item", "error");
+        }
+    };
+
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: "before" | "after") => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -501,7 +516,18 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 </div>
                                                 <span className="font-bold text-slate-700">{item.description}</span>
                                             </div>
-                                            <span className="text-xl font-black text-[#004B7E]">฿{item.price.toLocaleString()}</span>
+                                            <div className="flex items-center gap-6">
+                                                <span className="text-xl font-black text-[#004B7E]">฿{item.price.toLocaleString()}</span>
+                                                {(isMechanic || isAdmin) && order.status !== "Completed" && order.status !== "Paid" && (
+                                                    <button
+                                                        onClick={() => handleRemoveItem(item.id)}
+                                                        className="p-2 text-slate-300 hover:text-red-500 transition-colors"
+                                                        title="Remove item"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     ))
                                 )}

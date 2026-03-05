@@ -84,7 +84,7 @@ export default function CheckoutPage() {
         omise.configure({
             publicKey: process.env.NEXT_PUBLIC_OMISE_PUBLIC_KEY,
             currency: 'thb',
-            frameLabel: 'Pragunการซ่อม - Service Center',
+            frameLabel: 'MotoFlow Service - Center',
             submitLabel: 'PAY NOW',
         });
 

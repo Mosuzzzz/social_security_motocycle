@@ -22,6 +22,7 @@ pub mod process_payment;
 pub mod promote_user;
 pub mod refresh_token;
 pub mod register_user;
+pub mod remove_service_item;
 pub mod submit_feedback;
 pub mod update_order_photos;
 pub mod update_order_status;

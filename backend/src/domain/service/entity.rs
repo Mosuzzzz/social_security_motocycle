@@ -17,6 +17,8 @@ pub struct ServiceItem {
     pub order_id: i32,
     pub description: String,
     pub price: f64,
+    pub stock_item_id: Option<i32>,
+    pub quantity: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

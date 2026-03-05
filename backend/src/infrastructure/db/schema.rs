@@ -115,6 +115,8 @@ diesel::table! {
         #[max_length = 255]
         description -> Varchar,
         price -> Numeric,
+        stock_item_id -> Nullable<Int4>,
+        quantity -> Int4,
     }
 }
 
@@ -186,6 +188,7 @@ diesel::joinable!(refresh_tokens -> users (user_id));
 diesel::joinable!(repair_logs -> service_orders (order_id));
 diesel::joinable!(repair_logs -> users (mechanic_id));
 diesel::joinable!(service_items -> service_orders (order_id));
+diesel::joinable!(service_items -> stock_items (stock_item_id));
 diesel::joinable!(service_orders -> motorcycles (bike_id));
 diesel::joinable!(user_line_accounts -> users (user_id));
 

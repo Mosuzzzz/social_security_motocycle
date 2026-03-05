@@ -19,6 +19,7 @@ use crate::application::use_cases::process_payment::ProcessPaymentUseCase;
 use crate::application::use_cases::promote_user::PromoteUserUseCase;
 use crate::application::use_cases::refresh_token::RefreshTokenUseCase;
 use crate::application::use_cases::register_user::RegisterUserUseCase;
+use crate::application::use_cases::remove_service_item::RemoveServiceItemUseCase;
 use crate::application::use_cases::submit_feedback::SubmitFeedbackUseCase;
 use crate::application::use_cases::update_order_photos::UpdateOrderPhotosUseCase;
 use crate::application::use_cases::update_order_status::UpdateOrderStatusUseCase;
@@ -60,5 +61,6 @@ pub struct AppState {
     pub mark_notification_read_use_case:
         crate::application::use_cases::mark_notification_read::MarkNotificationReadUseCase,
     pub delete_service_order_use_case: DeleteServiceOrderUseCase,
+    pub remove_service_item_use_case: RemoveServiceItemUseCase,
     pub jwt_service: JwtService,
 }

@@ -440,7 +440,9 @@ async fn delete_service_order(
             .into_response();
     }
 
-    let reason = payload.reason.unwrap_or_else(|| "ไม่ระบุเหตุผล".to_string());
+    let reason = payload
+        .reason
+        .unwrap_or_else(|| "No reason provided".to_string());
 
     match state
         .delete_service_order_use_case
@@ -488,6 +490,27 @@ async fn add_service_item(
             tracing::error!("Failed to add service item: {}", e);
             (StatusCode::BAD_REQUEST, Json(ErrorResponse::from(e))).into_response()
         }
+    }
+}
+
+async fn remove_service_item(
+    State(state): State<Arc<AppState>>,
+    user: AuthUser,
+    axum::extract::Path(item_id): axum::extract::Path<i32>,
+) -> impl IntoResponse {
+    if user.role != Role::Mechanic && user.role != Role::Admin {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(ErrorResponse::from(
+                "Only mechanics or admins can remove service items",
+            )),
+        )
+            .into_response();
+    }
+
+    match state.remove_service_item_use_case.execute(item_id).await {
+        Ok(_) => StatusCode::NO_CONTENT.into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, Json(ErrorResponse::from(e))).into_response(),
     }
 }
 
@@ -717,6 +740,7 @@ pub fn create_router() -> Router<Arc<AppState>> {
         )
         .route("/orders/photos", post(update_order_photos))
         .route("/orders/items", post(add_service_item))
+        .route("/orders/items/{id}", delete(remove_service_item))
         .route("/orders/use-stock", post(use_stock_item))
         .route(
             "/stock",

@@ -215,7 +215,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                         <Wrench className="text-[#004B7E]" size={20} />
                                     </div>
                                     <div className="flex flex-col leading-none">
-                                        <span className="text-xl font-black text-[#FFD700] tracking-tighter uppercase">PRAGUN</span>
+                                        <span className="text-xl font-black text-[#FFD700] tracking-tighter uppercase">MOTOFLOW</span>
                                     </div>
                                 </Link>
                                 <button
@@ -304,7 +304,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 <Menu size={24} />
                             </button>
                             <div className="hidden md:flex flex-col">
-                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mb-1 block">Pragunการซ่อม Terminal</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mb-1 block">MotoFlow Service Terminal</span>
                                 <h2 className="text-xl font-black text-[#004B7E] uppercase tracking-tighter">
                                     {currentMenu.find(item => item.href === pathname)?.name || (pathname === "/dashboard/settings" ? "Settings" : "Dashboard")}
                                 </h2>

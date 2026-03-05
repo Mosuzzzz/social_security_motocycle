@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pragunการซ่อม | Professional Motorcycle Service Center",
-  description: "Pragunการซ่อม (Pragun Repair) - The No.1 Motorcycle Specialist in Nakhon Ratchasima. Expert repairs and genuine parts.",
+  title: "MotoFlow Service | Professional Motorcycle Service Center",
+  description: "MotoFlow Service - The No.1 Motorcycle Specialist in Nakhon Ratchasima. Expert repairs and genuine parts.",
 };
 
 import { AuthProvider } from "@/context/AuthContext";

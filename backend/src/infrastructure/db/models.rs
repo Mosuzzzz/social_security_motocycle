@@ -45,6 +45,30 @@ pub enum ServiceOrderStatusEnum {
     Paid,
 }
 
+impl From<crate::domain::service::entity::OrderStatus> for ServiceOrderStatusEnum {
+    fn from(status: crate::domain::service::entity::OrderStatus) -> Self {
+        match status {
+            crate::domain::service::entity::OrderStatus::Booked => ServiceOrderStatusEnum::Booked,
+            crate::domain::service::entity::OrderStatus::ReviewPending => {
+                ServiceOrderStatusEnum::ReviewPending
+            }
+            crate::domain::service::entity::OrderStatus::OfferSent => {
+                ServiceOrderStatusEnum::OfferSent
+            }
+            crate::domain::service::entity::OrderStatus::Repairing => {
+                ServiceOrderStatusEnum::Repairing
+            }
+            crate::domain::service::entity::OrderStatus::Completed => {
+                ServiceOrderStatusEnum::Completed
+            }
+            crate::domain::service::entity::OrderStatus::Cancelled => {
+                ServiceOrderStatusEnum::Cancelled
+            }
+            crate::domain::service::entity::OrderStatus::Paid => ServiceOrderStatusEnum::Paid,
+        }
+    }
+}
+
 #[derive(Queryable, Selectable, Debug, Clone, Serialize, Deserialize)]
 #[diesel(table_name = crate::infrastructure::db::schema::service_orders)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -111,6 +135,8 @@ pub struct ServiceItemModel {
     pub order_id: i32,
     pub description: String,
     pub price: bigdecimal::BigDecimal,
+    pub stock_item_id: Option<i32>,
+    pub quantity: i32,
 }
 
 #[derive(Insertable)]
@@ -119,6 +145,8 @@ pub struct NewServiceItem {
     pub order_id: i32,
     pub description: String,
     pub price: bigdecimal::BigDecimal,
+    pub stock_item_id: Option<i32>,
+    pub quantity: i32,
 }
 
 #[derive(Queryable, Selectable, Debug, Clone, Serialize, Deserialize)]

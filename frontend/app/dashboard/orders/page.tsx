@@ -75,17 +75,7 @@ export default function ServiceOrdersManagementPage() {
         }
     };
 
-    const handleComplete = (orderId: number, currentPrice: number) => {
-        const priceStr = prompt("Enter total service price (฿):", currentPrice.toString());
-        if (priceStr !== null) {
-            const price = parseFloat(priceStr);
-            if (isNaN(price)) {
-                showToast("Invalid price entered", "error");
-                return;
-            }
-            updateStatus(orderId, "Completed", price);
-        }
-    };
+
 
     const handleDelete = (orderId: number) => {
         setDeleteModal({ orderId, reason: "" });
@@ -204,14 +194,6 @@ export default function ServiceOrdersManagementPage() {
                                                         className="h-10 px-6 bg-[#004B7E] text-white hover:bg-[#003a61] rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#004B7E]/20 transition-all"
                                                     >
                                                         Send Review
-                                                    </button>
-                                                )}
-                                                {isMechanic && order.status === "Repairing" && (
-                                                    <button
-                                                        onClick={() => handleComplete(order.id, order.total_price)}
-                                                        className="h-10 px-6 bg-green-500 text-white hover:bg-green-600 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-green-500/20 transition-all"
-                                                    >
-                                                        Complete
                                                     </button>
                                                 )}
                                                 {isAdmin && (

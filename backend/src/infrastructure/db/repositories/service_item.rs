@@ -24,6 +24,8 @@ impl ServiceItemRepository {
             order_id: item.order_id,
             description: item.description,
             price,
+            stock_item_id: item.stock_item_id,
+            quantity: item.quantity,
         };
 
         let result = diesel::insert_into(service_items::table)
@@ -61,6 +63,8 @@ impl ServiceItemRepository {
             order_id: model.order_id,
             description: model.description,
             price,
+            stock_item_id: model.stock_item_id,
+            quantity: model.quantity,
         }
     }
 }

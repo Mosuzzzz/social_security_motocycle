@@ -38,6 +38,8 @@ impl AddServiceItemUseCase {
             order_id: command.order_id,
             description: command.description,
             price: command.price,
+            stock_item_id: None,
+            quantity: 1,
         };
 
         let added_item = self.item_repo.add_item(new_item).await?;

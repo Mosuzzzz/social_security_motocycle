@@ -14,7 +14,7 @@ export default function AppHeader() {
         <>
             {/* Top Blue Header */}
             <div className="bg-[#004B7E] text-white text-[11px] font-bold py-2 px-6 text-center uppercase tracking-widest leading-relaxed">
-                Pragunการซ่อม Master Service Center - The No.1 Motorcycle Specialist in Nakhon Ratchasima
+                MotoFlow Master Service Center - The No.1 Motorcycle Specialist in Nakhon Ratchasima
             </div>
 
             {/* Main Navigation Header */}

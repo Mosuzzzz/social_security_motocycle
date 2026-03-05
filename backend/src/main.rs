@@ -22,6 +22,7 @@ use backend::application::use_cases::process_payment::ProcessPaymentUseCase;
 use backend::application::use_cases::promote_user::PromoteUserUseCase;
 use backend::application::use_cases::refresh_token::RefreshTokenUseCase;
 use backend::application::use_cases::register_user::RegisterUserUseCase;
+use backend::application::use_cases::remove_service_item::RemoveServiceItemUseCase;
 use backend::application::use_cases::update_order_photos::UpdateOrderPhotosUseCase;
 use backend::application::use_cases::update_order_status::UpdateOrderStatusUseCase;
 use backend::application::use_cases::update_profile::UpdateProfileUseCase;
@@ -31,6 +32,7 @@ use backend::infrastructure::db::connection::establish_connection;
 use backend::infrastructure::db::repositories::inventory::InventoryRepository;
 use backend::infrastructure::db::repositories::motorcycle::MotorcycleRepository;
 use backend::infrastructure::db::repositories::refresh_token::RefreshTokenRepository;
+use backend::infrastructure::db::repositories::repair_log::RepairLogRepository;
 use backend::infrastructure::db::repositories::service_item::ServiceItemRepository;
 use backend::infrastructure::db::repositories::service_order::ServiceOrderRepository;
 use backend::infrastructure::db::repositories::user::UserRepository;
@@ -73,6 +75,7 @@ async fn main() {
             pool.clone(),
         );
     let feedback_repository = FeedbackRepository::new(pool.clone());
+    let repair_log_repository = RepairLogRepository::new(pool.clone());
 
     // Gateways
     let omise_gateway: Arc<dyn PaymentGateway + Send + Sync> = Arc::new(OmiseGateway::new());
@@ -118,6 +121,7 @@ async fn main() {
         user_line_account_repository.clone(),
         omise_gateway,
         notification_gateway.clone(),
+        repair_log_repository.clone(),
     );
     let list_users_use_case = ListUsersUseCase::new(user_repository.clone());
     let list_service_orders_use_case =
@@ -127,6 +131,7 @@ async fn main() {
         user_line_account_repository.clone(),
         user_repository.clone(),
         notification_gateway.clone(),
+        repair_log_repository,
     );
     let get_profile_use_case = GetProfileUseCase::new(
         user_repository.clone(),
@@ -178,6 +183,7 @@ async fn main() {
         backend::application::use_cases::use_stock_item::UseStockItemUseCase::new(
             inventory_repository.clone(),
         );
+    let remove_service_item_use_case = RemoveServiceItemUseCase::new(inventory_repository.clone());
 
     let mark_notification_read_use_case =
         backend::application::use_cases::mark_notification_read::MarkNotificationReadUseCase::new(
@@ -193,7 +199,6 @@ async fn main() {
         list_feedbacks_use_case,
         delete_feedback_use_case,
         register_user_use_case,
-
         promote_user_use_case,
         create_service_order_use_case,
         login_use_case,
@@ -219,6 +224,7 @@ async fn main() {
         list_notifications_use_case,
         mark_notification_read_use_case,
         delete_service_order_use_case,
+        remove_service_item_use_case,
         jwt_service: jwt_service.clone(),
     });
 

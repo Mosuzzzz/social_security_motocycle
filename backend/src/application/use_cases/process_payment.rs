@@ -1,6 +1,7 @@
 use crate::domain::notification::gateway::{NotificationGateway, NotificationMessage};
 use crate::domain::payment::gateway::PaymentGateway;
 use crate::domain::service::entity::OrderStatus;
+use crate::infrastructure::db::repositories::repair_log::RepairLogRepository;
 use crate::infrastructure::db::repositories::service_order::ServiceOrderRepository;
 use crate::infrastructure::db::repositories::user::UserRepository;
 use crate::infrastructure::db::repositories::user_line_account::UserLineAccountRepository;
@@ -28,6 +29,7 @@ pub struct ProcessPaymentUseCase {
     pub line_repo: UserLineAccountRepository,
     pub payment_gateway: Arc<dyn PaymentGateway + Send + Sync>,
     pub notification_gateway: Arc<dyn NotificationGateway + Send + Sync>,
+    pub repair_log_repo: RepairLogRepository,
 }
 
 impl ProcessPaymentUseCase {
@@ -37,6 +39,7 @@ impl ProcessPaymentUseCase {
         line_repo: UserLineAccountRepository,
         payment_gateway: Arc<dyn PaymentGateway + Send + Sync>,
         notification_gateway: Arc<dyn NotificationGateway + Send + Sync>,
+        repair_log_repo: RepairLogRepository,
     ) -> Self {
         Self {
             service_order_repo,
@@ -44,6 +47,7 @@ impl ProcessPaymentUseCase {
             line_repo,
             payment_gateway,
             notification_gateway,
+            repair_log_repo,
         }
     }
 
@@ -82,73 +86,98 @@ impl ProcessPaymentUseCase {
             order.status = OrderStatus::Paid;
             self.service_order_repo.update_order(order.clone()).await?;
 
-            // 4. Notify the user
-            let line_id = self
-                .line_repo
-                .find_by_user_id(order.customer_id)
-                .await
-                .ok()
-                .flatten()
-                .map(|l| l.line_user_id)
-                .unwrap_or_default();
-
-            let recipient = if !line_id.is_empty() {
-                line_id
-            } else {
-                self.user_repo
-                    .find_by_id(order.customer_id)
-                    .await?
-                    .ok_or("Customer not found")?
-                    .phone
-            };
-
+            // New: Log the status change
             let _ = self
-                .notification_gateway
-                .send_notification(NotificationMessage {
-                    user_id: order.customer_id,
-                    order_id: order.id,
-                    recipient,
-                    title: "Payment Successful 🛵".to_string(),
-                    body: format!(
-                        "💳 [จ่ายเงินสำเร็จ]เราได้รับยอดชำระเงินของคุณแล้วสำหรับออเดอร์ #SO-{} เป็นจำนวน ฿{} ขอบคุณที่ใช้บริการ MotoFlow ครับ!",
-                        order.id.unwrap(),
-                        order.total_price
-                    ),
-                    custom_payload: None,
-                })
+                .repair_log_repo
+                .add_log(
+                    order.id.unwrap(),
+                    order.customer_id, // For payments, the customer is the one who effectively triggered it
+                    "Order status updated to Paid via automated payment processing.".to_string(),
+                    crate::infrastructure::db::models::ServiceOrderStatusEnum::Paid,
+                )
                 .await;
 
-            // 5. Notify Admins about the payment
-            if let Ok(admins) = self.user_repo.find_admins().await {
-                for admin in admins {
-                    if let Some(admin_id) = admin.id {
-                        let admin_line_id = self
-                            .line_repo
-                            .find_by_user_id(admin_id)
-                            .await
-                            .ok()
-                            .flatten()
-                            .map(|l| l.line_user_id)
-                            .unwrap_or_default();
+            // 4. Fire notifications in background
+            let self_clone = self.clone();
+            let order_clone = order.clone();
 
-                        let _ = self
-                            .notification_gateway
-                            .send_notification(NotificationMessage {
-                                user_id: admin_id,
-                                order_id: order.id,
-                                recipient: admin_line_id,
-                                title: format!("Admin: Payment Received #{}", order.id.unwrap()),
-                                body: format!(
-                                    "Customer has paid ฿{} for order #SO-{}.",
-                                    order.total_price,
-                                    order.id.unwrap()
-                                ),
-                                custom_payload: None,
-                            })
-                            .await;
+            tokio::spawn(async move {
+                // Notify the user
+                let line_id = self_clone
+                    .line_repo
+                    .find_by_user_id(order_clone.customer_id)
+                    .await
+                    .ok()
+                    .flatten()
+                    .map(|l| l.line_user_id)
+                    .unwrap_or_default();
+
+                let recipient = if !line_id.is_empty() {
+                    line_id
+                } else {
+                    self_clone
+                        .user_repo
+                        .find_by_id(order_clone.customer_id)
+                        .await
+                        .ok()
+                        .flatten()
+                        .map(|u| u.phone)
+                        .unwrap_or_default()
+                };
+
+                if !recipient.is_empty() {
+                    let _ = self_clone
+                        .notification_gateway
+                        .send_notification(NotificationMessage {
+                            user_id: order_clone.customer_id,
+                            order_id: order_clone.id,
+                            recipient,
+                            title: "Payment Successful 🛵".to_string(),
+                            body: format!(
+                                "💳 [Payment Success] We received your payment of ฿{} for order #SO-{}. Thank you for using MotoFlow!",
+                                order_clone.total_price,
+                                order_clone.id.unwrap()
+                            ),
+                            custom_payload: None,
+                        })
+                        .await;
+                }
+
+                // Notify Admins about the payment
+                if let Ok(admins) = self_clone.user_repo.find_admins().await {
+                    for admin in admins {
+                        if let Some(admin_id) = admin.id {
+                            let admin_line_id = self_clone
+                                .line_repo
+                                .find_by_user_id(admin_id)
+                                .await
+                                .ok()
+                                .flatten()
+                                .map(|l| l.line_user_id)
+                                .unwrap_or_default();
+
+                            let _ = self_clone
+                                .notification_gateway
+                                .send_notification(NotificationMessage {
+                                    user_id: admin_id,
+                                    order_id: order_clone.id,
+                                    recipient: admin_line_id,
+                                    title: format!(
+                                        "Admin: Payment Received #{}",
+                                        order_clone.id.unwrap()
+                                    ),
+                                    body: format!(
+                                        "Customer has paid ฿{} for order #SO-{}.",
+                                        order_clone.total_price,
+                                        order_clone.id.unwrap()
+                                    ),
+                                    custom_payload: None,
+                                })
+                                .await;
+                        }
                     }
                 }
-            }
+            });
         }
 
         let status_str = if is_successful {

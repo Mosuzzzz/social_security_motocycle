@@ -81,6 +81,8 @@ impl ServiceOrderRepository {
                         order_id: m.order_id,
                         description: m.description,
                         price: m.price.to_string().parse::<f64>().unwrap_or(0.0),
+                        stock_item_id: m.stock_item_id,
+                        quantity: m.quantity,
                     })
                     .collect();
 

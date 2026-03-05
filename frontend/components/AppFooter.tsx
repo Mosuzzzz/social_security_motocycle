@@ -17,8 +17,8 @@ export default function AppFooter() {
                             <Wrench className="text-[#004B7E]" size={24} />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-2xl font-black text-[#FFD700] tracking-tighter leading-none uppercase">Pragun</span>
-                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] leading-none mt-1">การซ่อม - Service Center</span>
+                            <span className="text-2xl font-black text-[#FFD700] tracking-tighter leading-none uppercase">MotoFlow</span>
+                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] leading-none mt-1">Service Center</span>
                         </div>
                     </Link>
                     <p className="text-sm text-white/50 leading-relaxed font-medium">
@@ -71,7 +71,7 @@ export default function AppFooter() {
             </div>
 
             <div className="max-w-7xl mx-auto border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-black uppercase tracking-widest text-white/20">
-                <div>&copy; 2026 Pragunการซ่อม Thailand. ALL RIGHTS RESERVED.</div>
+                <div>&copy; 2026 MotoFlow Service Thailand. ALL RIGHTS RESERVED.</div>
                 <div className="flex gap-8">
                     <Link href="#" className="hover:text-white transition-colors">Terms of Service</Link>
                     <Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link>

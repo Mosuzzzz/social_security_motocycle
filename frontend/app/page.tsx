@@ -74,7 +74,7 @@ export default function Home() {
                   <MapPin size={16} className="fill-[#004B7E]/20" />
                   <span className="text-sm font-black uppercase tracking-tighter">Our Location</span>
                 </div>
-                <p className="text-[10px] text-slate-500 font-bold leading-tight">Pragunการซ่อม - Open Daily</p>
+                <p className="text-[10px] text-slate-500 font-bold leading-tight">MotoFlow Service - Open Daily</p>
               </div>
 
               {/* Real Map Embed */}
@@ -98,7 +98,7 @@ export default function Home() {
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                     <span className="text-[11px] font-black text-[#004B7E] uppercase tracking-wider">Now Open</span>
                   </div>
-                  <span className="text-sm font-bold text-slate-700">Pragunการซ่อม - Nakhon Ratchasima (Korat)</span>
+                  <span className="text-sm font-bold text-slate-700">MotoFlow Service - Nakhon Ratchasima (Korat)</span>
                 </div>
                 <div className="flex items-center gap-2 text-[#004B7E]">
                   <span className="text-[10px] font-bold">Directions</span>

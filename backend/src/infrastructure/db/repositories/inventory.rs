@@ -49,6 +49,8 @@ impl InventoryRepository {
                 order_id,
                 description: format!("{} (x{})", stock_item.name, quantity),
                 price: total_item_price_bd.clone(),
+                stock_item_id: Some(stock_item_id),
+                quantity,
             };
 
             diesel::insert_into(service_items::table)
@@ -70,6 +72,41 @@ impl InventoryRepository {
             diesel::result::Error::RollbackTransaction => "Not enough items in stock".to_string(),
             _ => e.to_string(),
         })?;
+
+        Ok(())
+    }
+
+    pub async fn remove_service_item(&self, item_id: i32) -> Result<(), String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+
+        conn.transaction::<_, diesel::result::Error, _>(|conn| {
+            // 1. Get the service item
+            let item = service_items::table
+                .find(item_id)
+                .first::<crate::infrastructure::db::models::ServiceItemModel>(conn)?;
+
+            // 2. If it has a stock_item_id, refund the stock
+            if let Some(stock_id) = item.stock_item_id {
+                diesel::update(stock_items::table.find(stock_id))
+                    .set(stock_items::quantity.eq(stock_items::quantity + item.quantity))
+                    .execute(conn)?;
+            }
+
+            // 3. Update order total price
+            let order = service_orders::table
+                .find(item.order_id)
+                .first::<ServiceOrderModel>(conn)?;
+
+            diesel::update(service_orders::table.find(item.order_id))
+                .set(service_orders::total_price.eq(order.total_price - item.price))
+                .execute(conn)?;
+
+            // 4. Delete the service item
+            diesel::delete(service_items::table.find(item_id)).execute(conn)?;
+
+            Ok(())
+        })
+        .map_err(|e| e.to_string())?;
 
         Ok(())
     }

@@ -1,6 +1,7 @@
 use crate::domain::notification::gateway::{NotificationGateway, NotificationMessage};
 use crate::domain::service::entity::{OrderStatus, ServiceOrder};
 use crate::domain::user::entity::Role;
+use crate::infrastructure::db::repositories::repair_log::RepairLogRepository;
 use crate::infrastructure::db::repositories::service_order::ServiceOrderRepository;
 use crate::infrastructure::db::repositories::user::UserRepository;
 use crate::infrastructure::db::repositories::user_line_account::UserLineAccountRepository;
@@ -20,6 +21,7 @@ pub struct UpdateOrderStatusUseCase {
     line_repo: UserLineAccountRepository,
     user_repo: UserRepository,
     notification_gateway: Arc<dyn NotificationGateway + Send + Sync>,
+    repair_log_repo: RepairLogRepository,
 }
 
 impl UpdateOrderStatusUseCase {
@@ -28,12 +30,14 @@ impl UpdateOrderStatusUseCase {
         line_repo: UserLineAccountRepository,
         user_repo: UserRepository,
         notification_gateway: Arc<dyn NotificationGateway + Send + Sync>,
+        repair_log_repo: RepairLogRepository,
     ) -> Self {
         Self {
             order_repo,
             line_repo,
             user_repo,
             notification_gateway,
+            repair_log_repo,
         }
     }
 
@@ -92,6 +96,22 @@ impl UpdateOrderStatusUseCase {
                     return Err("Mechanics cannot mark an order as Paid. Only the system or admin can do this.".into());
                 }
 
+                // Mechanics cannot Complete from Booked or OfferSent — must be Repairing first
+                if (order.status == OrderStatus::Booked || order.status == OrderStatus::OfferSent)
+                    && command.status == OrderStatus::Completed
+                {
+                    return Err(
+                        "The order must be in Repairing status before it can be marked as Completed.".into(),
+                    );
+                }
+
+                // Mechanics cannot Quick Start (Booked → Repairing) directly
+                if order.status == OrderStatus::Booked && command.status == OrderStatus::Repairing {
+                    return Err(
+                        "Please submit the order for review before starting the repair.".into(),
+                    );
+                }
+
                 // Disallow moving back to Booked or ReviewPending once repairing has started
                 if order.status == OrderStatus::Repairing
                     && (command.status == OrderStatus::Booked
@@ -122,16 +142,31 @@ impl UpdateOrderStatusUseCase {
 
         let updated_order = self.order_repo.update_order(order).await?;
 
+        // 4. Log the repair trail
+        let log_note = format!(
+            "Status changed from {:?} to {:?} by {:?} (ID: {})",
+            old_status, updated_order.status, role, user_id
+        );
+        let _ = self
+            .repair_log_repo
+            .add_log(
+                updated_order.id.unwrap(),
+                user_id,
+                log_note,
+                updated_order.status.clone().into(),
+            )
+            .await;
+
         // Only send notification if status has changed
         if old_status != updated_order.status {
             let status_text = match updated_order.status {
-                OrderStatus::Booked => "📋 รอการตรวจสอบ",
-                OrderStatus::ReviewPending => "🔍 ช่างกำลังตรวจสอบ",
-                OrderStatus::OfferSent => "💰 มีใบเสนอราคา รอยืนยัน",
-                OrderStatus::Repairing => "🔧 อยู่ระหว่างซ่อม",
-                OrderStatus::Completed => "✅ ซ่อมเสร็จ พร้อมรับรถ",
-                OrderStatus::Cancelled => "❌ ยกเลิกแล้ว",
-                OrderStatus::Paid => "💳 ชำระเงินแล้ว",
+                OrderStatus::Booked => "📋 Review Pending",
+                OrderStatus::ReviewPending => "🔍 Inspection in Progress",
+                OrderStatus::OfferSent => "💰 Quote Sent - Awaiting Confirmation",
+                OrderStatus::Repairing => "🔧 Repairing",
+                OrderStatus::Completed => "✅ Repair Completed - Ready for Pickup",
+                OrderStatus::Cancelled => "❌ Cancelled",
+                OrderStatus::Paid => "💳 Paid",
             };
 
             let status_color = match updated_order.status {
@@ -144,211 +179,237 @@ impl UpdateOrderStatusUseCase {
                 _ => "#6b7280",                          // Gray
             };
 
+            let self_clone = self.clone();
+            let updated_order_clone = updated_order.clone();
+            let status_text_str = status_text.to_string();
             let flex_payload =
                 self.create_flex_message(&updated_order, "ORDER UPDATE", status_text, status_color);
 
-            // 1. Notify Customer
-            let customer_line_id = self
-                .line_repo
-                .find_by_user_id(updated_order.customer_id)
-                .await
-                .ok()
-                .flatten()
-                .map(|l| l.line_user_id)
-                .unwrap_or_default();
+            // Fire and forget notifications in background
+            tokio::spawn(async move {
+                // 1. Notify Customer
+                let customer_line_id = self_clone
+                    .line_repo
+                    .find_by_user_id(updated_order_clone.customer_id)
+                    .await
+                    .ok()
+                    .flatten()
+                    .map(|l| l.line_user_id)
+                    .unwrap_or_default();
 
-            let (customer_title, customer_body, _customer_alt) = match updated_order.status {
-                OrderStatus::Completed => (
-                    format!("✅ รถซ่อมเสร็จแล้ว! | #SO-{}", updated_order.id.unwrap()),
-                    format!(
-                        "รถของคุณสำหรับออเดอร์ #SO-{} ซ่อมเสร็จเรียบร้อยแล้ว!\nสามารถมารับรถได้เลยครับ 🛵",
-                        updated_order.id.unwrap()
+                let (customer_title, customer_body, _customer_alt) = match updated_order_clone
+                    .status
+                {
+                    OrderStatus::Completed => (
+                        format!(
+                            "✅ Repair Completed! | #SO-{}",
+                            updated_order_clone.id.unwrap()
+                        ),
+                        format!(
+                            "Your vehicle for order #SO-{} is ready for pickup! 🛵",
+                            updated_order_clone.id.unwrap()
+                        ),
+                        format!(
+                            "✅ Repair Completed! Order #SO-{}\nYour vehicle is ready for pickup!",
+                            updated_order_clone.id.unwrap()
+                        ),
                     ),
-                    format!(
-                        "✅ ซ่อมเสร็จ! ออเดอร์ #SO-{}\nรถของคุณพร้อมรับแล้ว มารับได้เลยครับ!",
-                        updated_order.id.unwrap()
+                    OrderStatus::Repairing => (
+                        format!(
+                            "🔧 Repair Started | #SO-{}",
+                            updated_order_clone.id.unwrap()
+                        ),
+                        format!(
+                            "Repair has started for order #SO-{}. We will notify you once it's finished.",
+                            updated_order_clone.id.unwrap()
+                        ),
+                        format!(
+                            "🔧 Order #SO-{} is now being repaired.\nOur mechanics have started. We'll notify you when done.",
+                            updated_order_clone.id.unwrap()
+                        ),
                     ),
-                ),
-                OrderStatus::Repairing => (
-                    format!("🔧 เริ่มซ่อมรถแล้ว | #SO-{}", updated_order.id.unwrap()),
-                    format!(
-                        "ออเดอร์ #SO-{} เริ่มดำเนินการซ่อมโดยช่างแล้วครับ\nเราจะแจ้งเมื่อซ่อมเสร็จ",
-                        updated_order.id.unwrap()
+                    OrderStatus::OfferSent => (
+                        format!("💰 Repair Quote | #SO-{}", updated_order_clone.id.unwrap()),
+                        format!(
+                            "Quote for order #SO-{} is available: ฿{}.\nPlease confirm to start the repair.",
+                            updated_order_clone.id.unwrap(),
+                            updated_order_clone.total_price
+                        ),
+                        format!(
+                            "💰 Quote Sent! Order #SO-{}\nPrice: ฿{}\nPlease check and confirm.",
+                            updated_order_clone.id.unwrap(),
+                            updated_order_clone.total_price
+                        ),
                     ),
-                    format!(
-                        "🔧 ออเดอร์ #SO-{} เริ่มซ่อมแล้ว!\nช่างของเราเริ่มดำเนินการแล้ว จะแจ้งเมื่อเสร็จครับ",
-                        updated_order.id.unwrap()
+                    OrderStatus::ReviewPending => (
+                        format!(
+                            "🔍 Inspection in Progress | #SO-{}",
+                            updated_order_clone.id.unwrap()
+                        ),
+                        format!(
+                            "Order #SO-{} is currently being inspected by our mechanic.\nWe will provide a quote shortly.",
+                            updated_order_clone.id.unwrap()
+                        ),
+                        format!(
+                            "🔍 Inspection started for #SO-{}\nWait for our quote. We'll notify you soon.",
+                            updated_order_clone.id.unwrap()
+                        ),
                     ),
-                ),
-                OrderStatus::OfferSent => (
-                    format!("💰 ใบเสนอราคา | #SO-{}", updated_order.id.unwrap()),
-                    format!(
-                        "ออเดอร์ #SO-{} มีใบเสนอราคามาแล้ว ฿{}\nกรุณาตรวจสอบและยืนยันเพื่อเริ่มการซ่อมครับ",
-                        updated_order.id.unwrap(),
-                        updated_order.total_price
+                    OrderStatus::Cancelled => (
+                        format!(
+                            "❌ Order Cancelled | #SO-{}",
+                            updated_order_clone.id.unwrap()
+                        ),
+                        format!(
+                            "Order #SO-{} has been cancelled.\nPlease contact us if you have any questions.",
+                            updated_order_clone.id.unwrap()
+                        ),
+                        format!(
+                            "❌ Order #SO-{} cancelled.\nContact us if you have issues.",
+                            updated_order_clone.id.unwrap()
+                        ),
                     ),
-                    format!(
-                        "💰 มีใบเสนอราคา! ออเดอร์ #SO-{}\nราคาค่าซ่อม: ฿{}\nกรุณาตรวจสอบและยืนยันครับ",
-                        updated_order.id.unwrap(),
-                        updated_order.total_price
+                    _ => (
+                        format!("📋 Status Update | #SO-{}", updated_order_clone.id.unwrap()),
+                        format!(
+                            "Order #SO-{} status updated to: {}",
+                            updated_order_clone.id.unwrap(),
+                            status_text_str
+                        ),
+                        format!(
+                            "Order #SO-{} status changed: {}",
+                            updated_order_clone.id.unwrap(),
+                            status_text_str
+                        ),
                     ),
-                ),
-                OrderStatus::ReviewPending => (
-                    format!("🔍 ช่างกำลังตรวจสอบ | #SO-{}", updated_order.id.unwrap()),
-                    format!(
-                        "ออเดอร์ #SO-{} อยู่ในระหว่างการตรวจสอบสภาพโดยช่าง\nเราจะแจ้งราคาค่าซ่อมให้ทราบเร็ว ๆ นี้ครับ",
-                        updated_order.id.unwrap()
-                    ),
-                    format!(
-                        "🔍 ช่างกำลังตรวจสอบรถ! ออเดอร์ #SO-{}\nรอใบเสนอราคา เราจะแจ้งให้ทราบเร็ว ๆ นี้ครับ",
-                        updated_order.id.unwrap()
-                    ),
-                ),
-                OrderStatus::Cancelled => (
-                    format!("❌ ยกเลิกออเดอร์ | #SO-{}", updated_order.id.unwrap()),
-                    format!(
-                        "ออเดอร์ #SO-{} ของคุณถูกยกเลิกแล้ว\nหากมีข้อสงสัยกรุณาติดต่อเจ้าหน้าที่ครับ",
-                        updated_order.id.unwrap()
-                    ),
-                    format!(
-                        "❌ ยกเลิกออเดอร์ #SO-{}\nหากมีปัญหา กรุณาติดต่อเจ้าหน้าที่ครับ",
-                        updated_order.id.unwrap()
-                    ),
-                ),
-                _ => (
-                    format!("📋 อัพเดตสถานะ | #SO-{}", updated_order.id.unwrap()),
-                    format!(
-                        "ออเดอร์ #SO-{} อัพเดตสถานะเป็น: {}",
-                        updated_order.id.unwrap(),
-                        status_text
-                    ),
-                    format!(
-                        "ออเดอร์ #SO-{} เปลี่ยนสถานะ: {}",
-                        updated_order.id.unwrap(),
-                        status_text
-                    ),
-                ),
-            };
+                };
 
-            let _ = self
-                .notification_gateway
-                .send_notification(NotificationMessage {
-                    user_id: updated_order.customer_id,
-                    order_id: updated_order.id,
-                    recipient: customer_line_id,
-                    title: customer_title,
-                    body: customer_body,
-                    custom_payload: Some(flex_payload.clone()),
-                })
-                .await;
+                let _ = self_clone
+                    .notification_gateway
+                    .send_notification(NotificationMessage {
+                        user_id: updated_order_clone.customer_id,
+                        order_id: updated_order_clone.id,
+                        recipient: customer_line_id,
+                        title: customer_title,
+                        body: customer_body,
+                        custom_payload: Some(flex_payload.clone()),
+                    })
+                    .await;
 
-            // 2. Notify Admins
-            if let Ok(admins) = self.user_repo.find_admins().await {
-                for admin in admins {
-                    if let Some(admin_id) = admin.id {
-                        // Don't notify the person who made the change if they are an admin
-                        if admin_id == user_id {
-                            continue;
-                        }
-
-                        let admin_line_id = self
-                            .line_repo
-                            .find_by_user_id(admin_id)
-                            .await
-                            .ok()
-                            .flatten()
-                            .map(|l| l.line_user_id)
-                            .unwrap_or_default();
-
-                        let admin_body = match updated_order.status {
-                            OrderStatus::ReviewPending => format!(
-                                "⚠️ ออเดอร์ #SO-{} รอการตรวจสอบ\nกรุณาตรวจสอบรายการและส่งใบเสนอราคาครับ",
-                                updated_order.id.unwrap()
-                            ),
-                            OrderStatus::Completed => format!(
-                                "✅ ออเดอร์ #SO-{} ซ่อมเสร็จสมบูรณ์\nราคา: ฿{}",
-                                updated_order.id.unwrap(),
-                                updated_order.total_price
-                            ),
-                            OrderStatus::Cancelled => {
-                                format!("❌ ออเดอร์ #SO-{} ถูกยกเลิกแล้ว", updated_order.id.unwrap())
+                // 2. Notify Admins
+                if let Ok(admins) = self_clone.user_repo.find_admins().await {
+                    for admin in admins {
+                        if let Some(admin_id) = admin.id {
+                            // Don't notify the person who made the change if they are an admin
+                            if admin_id == user_id {
+                                continue;
                             }
-                            _ => format!(
-                                "📋 ออเดอร์ #SO-{} อัพเดตสถานะ: {}\nราคา: ฿{}",
-                                updated_order.id.unwrap(),
-                                status_text,
-                                updated_order.total_price
-                            ),
-                        };
 
-                        let _ = self
-                            .notification_gateway
-                            .send_notification(NotificationMessage {
-                                user_id: admin_id,
-                                order_id: updated_order.id,
-                                recipient: admin_line_id,
-                                title: format!(
-                                    "🔔 อัพเดตออเดอร์ | #SO-{}",
-                                    updated_order.id.unwrap()
+                            let admin_line_id = self_clone
+                                .line_repo
+                                .find_by_user_id(admin_id)
+                                .await
+                                .ok()
+                                .flatten()
+                                .map(|l| l.line_user_id)
+                                .unwrap_or_default();
+
+                            let admin_body = match updated_order_clone.status {
+                                OrderStatus::ReviewPending => format!(
+                                    "⚠️ Order #SO-{} pending inspection.\nPlease review and send a quote.",
+                                    updated_order_clone.id.unwrap()
                                 ),
-                                body: admin_body,
-                                custom_payload: Some(flex_payload.clone()),
-                            })
-                            .await;
+                                OrderStatus::Completed => format!(
+                                    "✅ Order #SO-{} completed successfully.\nTotal Price: ฿{}",
+                                    updated_order_clone.id.unwrap(),
+                                    updated_order_clone.total_price
+                                ),
+                                OrderStatus::Cancelled => {
+                                    format!(
+                                        "❌ Order #SO-{} has been cancelled.",
+                                        updated_order_clone.id.unwrap()
+                                    )
+                                }
+                                _ => format!(
+                                    "📋 Order #SO-{} Status Update: {}\nPrice: ฿{}",
+                                    updated_order_clone.id.unwrap(),
+                                    status_text_str,
+                                    updated_order_clone.total_price
+                                ),
+                            };
+
+                            let _ = self_clone
+                                .notification_gateway
+                                .send_notification(NotificationMessage {
+                                    user_id: admin_id,
+                                    order_id: updated_order_clone.id,
+                                    recipient: admin_line_id,
+                                    title: format!(
+                                        "🔔 Order Update | #SO-{}",
+                                        updated_order_clone.id.unwrap()
+                                    ),
+                                    body: admin_body,
+                                    custom_payload: Some(flex_payload.clone()),
+                                })
+                                .await;
+                        }
                     }
                 }
-            }
 
-            // 3. Notify Mechanics
-            if let Ok(mechanics) = self.user_repo.find_mechanics().await {
-                for mechanic in mechanics {
-                    if let Some(mech_id) = mechanic.id {
-                        // Don't notify the person who made the change
-                        if mech_id == user_id {
-                            continue;
-                        }
-
-                        let mech_line_id = self
-                            .line_repo
-                            .find_by_user_id(mech_id)
-                            .await
-                            .ok()
-                            .flatten()
-                            .map(|l| l.line_user_id)
-                            .unwrap_or_default();
-
-                        let mech_body = match updated_order.status {
-                            OrderStatus::Repairing => format!(
-                                "🔧 ออเดอร์ #SO-{} ลูกค้ายืนยันซ่อมแล้ว!\nสามารถเริ่มดำเนินการซ่อมได้เลยครับ",
-                                updated_order.id.unwrap()
-                            ),
-                            OrderStatus::Cancelled => {
-                                format!("❌ ออเดอร์ #SO-{} ถูกยกเลิกแล้ว", updated_order.id.unwrap())
+                // 3. Notify Mechanics
+                if let Ok(mechanics) = self_clone.user_repo.find_mechanics().await {
+                    for mechanic in mechanics {
+                        if let Some(mech_id) = mechanic.id {
+                            // Don't notify the person who made the change
+                            if mech_id == user_id {
+                                continue;
                             }
-                            _ => format!(
-                                "📋 ออเดอร์ #SO-{} อัพเดตสถานะ: {}",
-                                updated_order.id.unwrap(),
-                                status_text
-                            ),
-                        };
 
-                        let _ = self
-                            .notification_gateway
-                            .send_notification(NotificationMessage {
-                                user_id: mech_id,
-                                order_id: updated_order.id,
-                                recipient: mech_line_id,
-                                title: format!(
-                                    "🔧 อัพเดตงานซ่อม | #SO-{}",
-                                    updated_order.id.unwrap()
+                            let mech_line_id = self_clone
+                                .line_repo
+                                .find_by_user_id(mech_id)
+                                .await
+                                .ok()
+                                .flatten()
+                                .map(|l| l.line_user_id)
+                                .unwrap_or_default();
+
+                            let mech_body = match updated_order_clone.status {
+                                OrderStatus::Repairing => format!(
+                                    "🔧 Order #SO-{} customer confirmed!\nYou can start the repair now.",
+                                    updated_order_clone.id.unwrap()
                                 ),
-                                body: mech_body,
-                                custom_payload: Some(flex_payload.clone()),
-                            })
-                            .await;
+                                OrderStatus::Cancelled => {
+                                    format!(
+                                        "❌ Order #SO-{} has been cancelled.",
+                                        updated_order_clone.id.unwrap()
+                                    )
+                                }
+                                _ => format!(
+                                    "📋 Order #SO-{} Status Update: {}",
+                                    updated_order_clone.id.unwrap(),
+                                    status_text_str
+                                ),
+                            };
+
+                            let _ = self_clone
+                                .notification_gateway
+                                .send_notification(NotificationMessage {
+                                    user_id: mech_id,
+                                    order_id: updated_order_clone.id,
+                                    recipient: mech_line_id,
+                                    title: format!(
+                                        "🔧 Repair Update | #SO-{}",
+                                        updated_order_clone.id.unwrap()
+                                    ),
+                                    body: mech_body,
+                                    custom_payload: Some(flex_payload.clone()),
+                                })
+                                .await;
+                        }
                     }
                 }
-            }
+            });
         }
 
         Ok(updated_order)
@@ -376,7 +437,7 @@ impl UpdateOrderStatusUseCase {
                     "contents": [
                         {
                             "type": "text",
-                            "text": "Pragunการซ่อม",
+                            "text": "MotoFlow Service",
                             "color": "#FFD700",
                             "size": "xs",
                             "weight": "bold"
