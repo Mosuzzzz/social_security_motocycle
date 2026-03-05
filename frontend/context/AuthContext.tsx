@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const initLiff = async () => {
-            const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
+            const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
             if (!liffId) {
                 console.error("LIFF ID not found");
                 setIsLiffLoading(false);
