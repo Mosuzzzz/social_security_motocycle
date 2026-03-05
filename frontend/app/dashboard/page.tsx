@@ -36,22 +36,27 @@ export default function DashboardPage() {
     const { showToast } = useToast();
     const router = useRouter();
     const [orders, setOrders] = useState<ServiceOrder[]>([]);
+    const [profile, setProfile] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedReceipt, setSelectedReceipt] = useState<ServiceOrder | null>(null);
 
-    const fetchOrders = async () => {
+    const fetchData = async () => {
         try {
-            const data = await apiFetch("/api/orders");
-            setOrders(data || []);
+            const [ordersData, profileData] = await Promise.all([
+                apiFetch("/api/orders"),
+                apiFetch("/api/me")
+            ]);
+            setOrders(ordersData || []);
+            setProfile(profileData);
         } catch (err) {
-            console.error("Failed to fetch orders", err);
+            console.error("Failed to fetch data", err);
         } finally {
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchOrders();
+        fetchData();
     }, []);
 
     const handlePayment = async (orderId: number, amount: number) => {
@@ -78,7 +83,7 @@ export default function DashboardPage() {
                         }),
                     });
                     showToast("Payment successful! Thank you.", "success");
-                    fetchOrders();
+                    fetchData();
                 } catch (err: unknown) {
                     showToast((err as Error).message || "Payment failed", "error");
                 } finally {
@@ -104,6 +109,31 @@ export default function DashboardPage() {
                         Welcome, {user?.username}
                     </h1>
                 </section>
+
+                {/* LINE Connection Prompt (Only if not connected) */}
+                {!isLoading && profile && !profile.line_connected && (
+                    <div className="bg-[#06C755] rounded-4xl p-8 shadow-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-8 opacity-10 transform group-hover:scale-110 transition-transform">
+                            <Send size={120} className="text-white" />
+                        </div>
+                        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                            <div className="space-y-2">
+                                <h3 className="text-2xl font-black text-white uppercase tracking-tighter">
+                                    Connect with LINE Official
+                                </h3>
+                                <p className="text-white/80 font-bold text-sm max-w-md leading-relaxed">
+                                    Receive real-time repair status updates and instant payment confirmations directly in your LINE app.
+                                </p>
+                            </div>
+                            <Link
+                                href="/dashboard/settings"
+                                className="px-10 py-4 bg-white text-[#06C755] font-black text-xs rounded-2xl hover:bg-slate-100 transition-all uppercase tracking-widest text-center shadow-lg"
+                            >
+                                Connect Now
+                            </Link>
+                        </div>
+                    </div>
+                )}
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">

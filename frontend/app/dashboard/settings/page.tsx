@@ -35,6 +35,19 @@ export default function SettingsPage() {
     const [phone, setPhone] = useState("");
     const [isUpdating, setIsUpdating] = useState(false);
     const [justDisconnected, setJustDisconnected] = useState(false);
+    const [isFriend, setIsFriend] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        const checkFriendship = async () => {
+            if (liff.isLoggedIn()) {
+                const friendship = await liff.getFriendship();
+                setIsFriend(friendship.friendFlag);
+            } else {
+                setIsFriend(false);
+            }
+        };
+        checkFriendship();
+    }, [isLoading]);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -279,16 +292,28 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
 
-                                <button
-                                    onClick={profile?.line_connected ? handleDisconnectLine : handleConnectLine}
-                                    disabled={isConnectingLine}
-                                    className={`px-8 py-3 font-black text-xs rounded-xl transition-all uppercase tracking-widest ${profile?.line_connected
-                                        ? "bg-red-50 text-red-600 hover:bg-red-600 hover:text-white"
-                                        : "bg-[#06C755] text-white hover:bg-[#05a647] shadow-lg shadow-[#06C755]/20"
-                                        }`}
-                                >
-                                    {isConnectingLine ? "..." : profile?.line_connected ? "Disconnect" : "Connect Now"}
-                                </button>
+                                <div className="flex gap-3">
+                                    {profile?.line_connected && isFriend === false && (
+                                        <a
+                                            href="https://line.me/R/ti/p/@421ujffq"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="px-8 py-3 bg-[#06C755] text-white font-black text-xs rounded-xl hover:bg-[#05a647] transition-all uppercase tracking-widest flex items-center gap-2"
+                                        >
+                                            Add Friend
+                                        </a>
+                                    )}
+                                    <button
+                                        onClick={profile?.line_connected ? handleDisconnectLine : handleConnectLine}
+                                        disabled={isConnectingLine}
+                                        className={`px-8 py-3 font-black text-xs rounded-xl transition-all uppercase tracking-widest ${profile?.line_connected
+                                            ? "bg-red-50 text-red-600 hover:bg-red-600 hover:text-white"
+                                            : "bg-[#06C755] text-white hover:bg-[#05a647] shadow-lg shadow-[#06C755]/20"
+                                            }`}
+                                    >
+                                        {isConnectingLine ? "..." : profile?.line_connected ? "Disconnect" : "Connect Now"}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
