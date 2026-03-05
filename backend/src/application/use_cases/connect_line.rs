@@ -1,3 +1,4 @@
+use crate::domain::notification::gateway::{NotificationGateway, NotificationMessage};
 use crate::infrastructure::db::repositories::user_line_account::UserLineAccountRepository;
 use crate::infrastructure::external::notification::line::LineNotificationGateway;
 use serde::{Deserialize, Serialize};
@@ -66,8 +67,30 @@ impl ConnectLineUseCase {
         };
 
         self.line_repo
-            .link_account(user_id_val, command.line_user_id, display_name, picture_url)
+            .link_account(
+                user_id_val,
+                command.line_user_id.clone(),
+                display_name.clone(),
+                picture_url,
+            )
             .await?;
+
+        // Send welcome message
+        let welcome_message = NotificationMessage {
+            user_id: user_id_val,
+            order_id: None,
+            recipient: command.line_user_id,
+            title: "Connection Successful".to_string(),
+            body: format!(
+                "Hello, {}! 🎉\n\nYour LINE account has been successfully connected to the Social Security Motorcycle system.\nYou will now receive service status and payment notifications through this channel.",
+                display_name.as_deref().unwrap_or("Valued Member")
+            ),
+            custom_payload: None,
+        };
+
+        if let Err(e) = self.line_gateway.send_notification(welcome_message).await {
+            tracing::error!("Failed to send LINE welcome message: {}", e);
+        }
 
         Ok(ConnectLineResult {
             success: true,
