@@ -1,3 +1,5 @@
+use diesel::Connection;
+use diesel::connection::CacheSize;
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, CustomizeConnection};
 use std::env;
@@ -11,7 +13,7 @@ pub struct ConnectionOptions;
 impl CustomizeConnection<PgConnection, diesel::r2d2::Error> for ConnectionOptions {
     fn on_acquire(&self, conn: &mut PgConnection) -> Result<(), diesel::r2d2::Error> {
         // Disable prepared statements for compatibility with Supabase/PgBouncer Transaction mode
-        conn.set_prepared_statement_cache_size(0);
+        conn.set_prepared_statement_cache_size(CacheSize::Disabled);
         Ok(())
     }
 }
