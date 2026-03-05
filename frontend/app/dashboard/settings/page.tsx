@@ -80,7 +80,11 @@ export default function SettingsPage() {
 
                     await apiFetch("/api/line/connect", {
                         method: "POST",
-                        body: JSON.stringify({ line_user_id: lineId }),
+                        body: JSON.stringify({
+                            line_user_id: lineId,
+                            display_name: lineProfile.displayName,
+                            picture_url: lineProfile.pictureUrl
+                        }),
                     });
 
                     showToast("LINE account connected successfully!", "success");
@@ -112,7 +116,11 @@ export default function SettingsPage() {
 
             await apiFetch("/api/line/connect", {
                 method: "POST",
-                body: JSON.stringify({ line_user_id: lineId }),
+                body: JSON.stringify({
+                    line_user_id: lineId,
+                    display_name: lineProfile.displayName,
+                    picture_url: lineProfile.pictureUrl
+                }),
             });
 
             showToast("LINE account connected successfully!", "success");

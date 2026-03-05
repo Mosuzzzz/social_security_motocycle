@@ -6,6 +6,8 @@ use std::sync::Arc;
 #[derive(Deserialize)]
 pub struct ConnectLineCommand {
     pub line_user_id: String,
+    pub display_name: Option<String>,
+    pub picture_url: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -35,11 +37,33 @@ impl ConnectLineUseCase {
         user_id_val: i32,
         command: ConnectLineCommand,
     ) -> Result<ConnectLineResult, String> {
-        // Fetch profile from LINE
-        let profile = self.line_gateway.get_profile(&command.line_user_id).await?;
-
-        let display_name = profile["displayName"].as_str().map(|s| s.to_string());
-        let picture_url = profile["pictureUrl"].as_str().map(|s| s.to_string());
+        // Fetch profile from LINE as a fallback or to verify
+        // If it fails with 404, we can still use the provided info from the client
+        let (display_name, picture_url) = match self
+            .line_gateway
+            .get_profile(&command.line_user_id)
+            .await
+        {
+            Ok(profile) => {
+                let d_name = profile["displayName"]
+                    .as_str()
+                    .map(|s| s.to_string())
+                    .or(command.display_name);
+                let p_url = profile["pictureUrl"]
+                    .as_str()
+                    .map(|s| s.to_string())
+                    .or(command.picture_url);
+                (d_name, p_url)
+            }
+            Err(e) if e.contains("404") => {
+                tracing::warn!(
+                    "LINE profile not found (user likely not a friend of bot): {}. Using provided info.",
+                    e
+                );
+                (command.display_name, command.picture_url)
+            }
+            Err(e) => return Err(e),
+        };
 
         self.line_repo
             .link_account(user_id_val, command.line_user_id, display_name, picture_url)
