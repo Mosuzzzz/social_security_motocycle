@@ -28,6 +28,8 @@ pub struct ServiceOrder {
     pub total_price: f64,
     pub items: Vec<ServiceItem>,
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub before_picture_url: Option<String>,
+    pub after_picture_url: Option<String>,
 }
 
 impl ServiceOrder {
@@ -40,6 +42,8 @@ impl ServiceOrder {
             total_price: 0.0,
             items: Vec::new(),
             created_at: Some(chrono::Utc::now()),
+            before_picture_url: None,
+            after_picture_url: None,
         }
     }
 

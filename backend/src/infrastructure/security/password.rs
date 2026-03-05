@@ -7,19 +7,19 @@ pub fn hash_password(password: &str) -> Result<String, String> {
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
 
-    // Hash password to PHC string ($argon2id$v=19$...)
-    let password_hash = argon2
+    argon2
         .hash_password(password.as_bytes(), &salt)
-        .map_err(|e| e.to_string())?
-        .to_string();
-
-    Ok(password_hash)
+        .map(|hash| hash.to_string())
+        .map_err(|e| format!("Failed to hash password: {}", e))
 }
 
 pub fn verify_password(hash: &str, password: &str) -> Result<bool, String> {
-    let parsed_hash = PasswordHash::new(hash).map_err(|e| e.to_string())?;
+    let parsed_hash =
+        PasswordHash::new(hash).map_err(|e| format!("Invalid password hash: {}", e))?;
 
-    Ok(Argon2::default()
+    let argon2 = Argon2::default();
+
+    Ok(argon2
         .verify_password(password.as_bytes(), &parsed_hash)
         .is_ok())
 }

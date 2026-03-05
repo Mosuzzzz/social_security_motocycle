@@ -7,6 +7,7 @@ use backend::infrastructure::db::repositories::feedback::FeedbackRepository;
 use backend::application::use_cases::add_service_item::AddServiceItemUseCase;
 use backend::application::use_cases::connect_line::ConnectLineUseCase;
 use backend::application::use_cases::create_service_order::CreateServiceOrderUseCase;
+use backend::application::use_cases::delete_feedback::DeleteFeedbackUseCase;
 use backend::application::use_cases::delete_service_order::DeleteServiceOrderUseCase;
 use backend::application::use_cases::disconnect_line::DisconnectLineUseCase;
 use backend::application::use_cases::get_dashboard_stats::GetDashboardStatsUseCase;
@@ -21,6 +22,7 @@ use backend::application::use_cases::process_payment::ProcessPaymentUseCase;
 use backend::application::use_cases::promote_user::PromoteUserUseCase;
 use backend::application::use_cases::refresh_token::RefreshTokenUseCase;
 use backend::application::use_cases::register_user::RegisterUserUseCase;
+use backend::application::use_cases::update_order_photos::UpdateOrderPhotosUseCase;
 use backend::application::use_cases::update_order_status::UpdateOrderStatusUseCase;
 use backend::application::use_cases::update_profile::UpdateProfileUseCase;
 use backend::domain::notification::gateway::NotificationGateway;
@@ -139,6 +141,8 @@ async fn main() {
         motorcycle_repository,
     );
     let update_profile_use_case = UpdateProfileUseCase::new(user_repository);
+    let update_order_photos_use_case =
+        UpdateOrderPhotosUseCase::new(service_order_repository.clone());
     let get_service_order_detail_use_case =
         GetServiceOrderDetailUseCase::new(service_order_repository.clone());
     let add_service_item_use_case = AddServiceItemUseCase::new(
@@ -152,6 +156,7 @@ async fn main() {
     );
     let submit_feedback_use_case = SubmitFeedbackUseCase::new(feedback_repository.clone());
     let list_feedbacks_use_case = ListFeedbacksUseCase::new(feedback_repository.clone());
+    let delete_feedback_use_case = DeleteFeedbackUseCase::new(feedback_repository.clone());
 
     let add_stock_item_use_case =
         backend::application::use_cases::add_stock_item::AddStockItemUseCase::new(
@@ -186,6 +191,7 @@ async fn main() {
     let app_state = Arc::new(AppState {
         submit_feedback_use_case,
         list_feedbacks_use_case,
+        delete_feedback_use_case,
         register_user_use_case,
 
         promote_user_use_case,
@@ -209,6 +215,7 @@ async fn main() {
         update_stock_item_use_case,
         delete_stock_item_use_case,
         update_profile_use_case,
+        update_order_photos_use_case,
         list_notifications_use_case,
         mark_notification_read_use_case,
         delete_service_order_use_case,

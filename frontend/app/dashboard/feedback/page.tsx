@@ -9,7 +9,8 @@ import {
     Mail,
     Phone,
     Calendar,
-    Search
+    Search,
+    Trash2
 } from "lucide-react";
 
 interface Feedback {
@@ -41,6 +42,17 @@ export default function FeedbackAdminPage() {
 
         fetchFeedbacks();
     }, []);
+
+    const handleDeleteFeedback = async (id: number) => {
+        if (!confirm("Are you sure you want to delete this feedback?")) return;
+
+        try {
+            await apiFetch(`/api/feedback/${id}`, { method: "DELETE" });
+            setFeedbacks(feedbacks.filter(f => f.feedback_id !== id));
+        } catch (err) {
+            console.error("Failed to delete feedback", err);
+        }
+    };
 
     const filteredFeedbacks = feedbacks.filter(f =>
         f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -99,6 +111,13 @@ export default function FeedbackAdminPage() {
                                     <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-[#FFD700]/10 group-hover:text-[#004B7E] group-hover:border-[#FFD700]/20 transition-all">
                                         <MessageSquare size={20} />
                                     </div>
+                                    <button
+                                        onClick={() => handleDeleteFeedback(f.feedback_id)}
+                                        className="mt-4 w-12 h-12 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center text-red-300 hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                                        title="Delete Feedback"
+                                    >
+                                        <Trash2 size={20} />
+                                    </button>
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">

@@ -140,14 +140,14 @@ export default function StockManagementPage() {
                         <AlertCircle size={48} />
                     </div>
                     <div className="text-center">
-                        <h2 className="text-3xl font-black text-[#004B7E] uppercase tracking-tighter mb-2">เข้าถึงไม่ได้</h2>
-                        <p className="text-slate-400 font-bold">เฉพาะผู้ดูและระบบเท่านั้นที่สามารถจัดการสต็อกสินค้าได้</p>
+                        <h2 className="text-3xl font-black text-[#004B7E] uppercase tracking-tighter mb-2">Access Denied</h2>
+                        <p className="text-slate-400 font-bold">Only administrators can manage stock inventory.</p>
                     </div>
                     <button
                         onClick={() => router.push("/dashboard")}
                         className="px-8 py-3 bg-[#004B7E] text-white font-black rounded-xl hover:bg-[#003a61] transition-all uppercase tracking-widest text-xs shadow-lg shadow-[#004B7E]/20"
                     >
-                        กลับไปหน้าหลัก
+                        Return to Dashboard
                     </button>
                 </div>
             </DashboardLayout>
@@ -161,7 +161,7 @@ export default function StockManagementPage() {
                     <section>
                         <p className="text-[#004B7E] font-black text-[10px] uppercase tracking-[0.2em] mb-2">Inventory Control</p>
                         <h1 className="text-3xl md:text-5xl font-black text-slate-800 uppercase tracking-tighter">
-                            จัดการคลังอะไหล่
+                            Spare Parts Inventory
                         </h1>
                     </section>
                 </div>
@@ -179,14 +179,14 @@ export default function StockManagementPage() {
                                             <Plus size={24} className="text-[#004B7E]" />
                                         )}
                                     </div>
-                                    {editingItem ? "แก้ไขรายการ" : "เพิ่มอะไหล่ใหม่"}
+                                    {editingItem ? "Edit Item" : "Add New Part"}
                                 </h2>
                                 <form onSubmit={handleSaveItem} className="space-y-6">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">ชื่อรายการ</label>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Item Name</label>
                                         <input
                                             type="text"
-                                            placeholder="เช่น น้ำมันเครื่อง 10W-40"
+                                            placeholder="e.g. Engine Oil 10W-40"
                                             value={newItemName}
                                             onChange={(e) => setNewItemName(e.target.value)}
                                             className="w-full h-14 px-6 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-[#004B7E] text-slate-800 font-bold transition-all outline-none"
@@ -194,7 +194,7 @@ export default function StockManagementPage() {
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">ราคา (฿)</label>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Price (฿)</label>
                                             <input
                                                 type="number"
                                                 placeholder="0.00"
@@ -204,7 +204,7 @@ export default function StockManagementPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">จำนวน</label>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Quantity</label>
                                             <input
                                                 type="number"
                                                 placeholder="0"
@@ -221,7 +221,7 @@ export default function StockManagementPage() {
                                             className={`w-full h-16 ${editingItem ? "bg-[#FFD700] text-[#004B7E]" : "bg-[#004B7E] text-white"} disabled:opacity-50 font-black rounded-2xl transition-all shadow-xl hover:-translate-y-1 flex items-center justify-center gap-3 uppercase tracking-widest text-sm`}
                                         >
                                             <Save size={20} />
-                                            {isSaving ? "กำลังบันทึก..." : editingItem ? "บันทึกการแก้ไข" : "เพิ่มเข้าคลัง"}
+                                            {isSaving ? "Saving..." : editingItem ? "Save Changes" : "Add to Stock"}
                                         </button>
                                         {editingItem && (
                                             <button
@@ -229,7 +229,7 @@ export default function StockManagementPage() {
                                                 onClick={cancelEditing}
                                                 className="w-full h-14 bg-slate-50 text-slate-400 font-black rounded-2xl hover:bg-slate-100 transition-all uppercase tracking-widest text-xs"
                                             >
-                                                ยกเลิก
+                                                Cancel
                                             </button>
                                         )}
                                     </div>
@@ -240,12 +240,12 @@ export default function StockManagementPage() {
                     {/* Inventory List */}
                     <div className={`${user?.role === "Admin" ? "lg:col-span-2" : "lg:col-span-3"} space-y-6`}>
                         <div className="flex items-center justify-between gap-6 px-4">
-                            <h2 className="text-xl font-black text-[#004B7E] uppercase tracking-tight">รายการอะไหล่ในคลัง</h2>
+                            <h2 className="text-xl font-black text-[#004B7E] uppercase tracking-tight">Stock Inventory List</h2>
                             <div className="relative group flex-1 max-w-xs">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#004B7E] transition-colors" size={16} />
                                 <input
                                     type="text"
-                                    placeholder="ค้นหา..."
+                                    placeholder="Search..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     className="w-full h-12 pl-12 pr-6 bg-white border border-slate-100 rounded-xl focus:outline-none focus:border-[#004B7E] text-sm font-bold shadow-sm transition-all"
@@ -257,10 +257,10 @@ export default function StockManagementPage() {
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="border-b border-slate-50 bg-slate-50/50 text-[10px] font-black uppercase tracking-[0.2em] text-[#004B7E]">
-                                        <th className="px-8 py-6">ชื่อรายการ</th>
-                                        <th className="px-8 py-6">ราคา</th>
-                                        <th className="px-8 py-6">คงเหลือ</th>
-                                        {user?.role === "Admin" && <th className="px-8 py-6 text-right">ดำเนินการ</th>}
+                                        <th className="px-8 py-6">Item Name</th>
+                                        <th className="px-8 py-6">Price</th>
+                                        <th className="px-8 py-6">In Stock</th>
+                                        {user?.role === "Admin" && <th className="px-8 py-6 text-right">Actions</th>}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
@@ -269,7 +269,7 @@ export default function StockManagementPage() {
                                             <td colSpan={4} className="px-8 py-24 text-center">
                                                 <div className="flex flex-col items-center gap-4">
                                                     <div className="w-10 h-10 border-4 border-slate-100 border-t-[#004B7E] rounded-full animate-spin"></div>
-                                                    <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">กำลังโหลด...</span>
+                                                    <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">Loading...</span>
                                                 </div>
                                             </td>
                                         </tr>
@@ -278,7 +278,7 @@ export default function StockManagementPage() {
                                             <td colSpan={4} className="px-8 py-24 text-center">
                                                 <div className="flex flex-col items-center gap-4 text-slate-200">
                                                     <Package size={48} />
-                                                    <span className="text-slate-400 font-bold uppercase tracking-widest text-xs">ไม่พบรายการสินค้า</span>
+                                                    <span className="text-slate-400 font-bold uppercase tracking-widest text-xs">No items found</span>
                                                 </div>
                                             </td>
                                         </tr>
@@ -298,7 +298,7 @@ export default function StockManagementPage() {
                                                 </td>
                                                 <td className="px-8 py-6">
                                                     <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${item.quantity < 5 ? "bg-red-50 text-red-600 border-red-100" : "bg-green-50 text-green-600 border-green-100"}`}>
-                                                        {item.quantity} ชิ้น
+                                                        {item.quantity} Units
                                                     </span>
                                                 </td>
                                                 {user?.role === "Admin" && (
@@ -309,14 +309,14 @@ export default function StockManagementPage() {
                                                                 className="h-10 px-4 bg-slate-50 text-slate-400 hover:bg-[#FFD700] hover:text-[#004B7E] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
                                                             >
                                                                 <Wrench size={14} />
-                                                                แก้ไข
+                                                                Edit
                                                             </button>
                                                             <button
                                                                 onClick={() => item.id && handleDeleteItem(item.id)}
                                                                 className="h-10 px-4 bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
                                                             >
                                                                 <Trash2 size={14} />
-                                                                ลบ
+                                                                Delete
                                                             </button>
                                                         </div>
                                                     </td>

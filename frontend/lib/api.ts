@@ -15,8 +15,9 @@ function onRefreshed(token: string) {
 export async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<any> {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
+    const isFormData = options.body instanceof FormData;
     const headers: Record<string, string> = {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(options.headers as Record<string, string>),
     };

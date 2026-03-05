@@ -3,6 +3,7 @@ pub mod inventory;
 pub mod motorcycle;
 pub mod notification;
 pub mod refresh_token;
+pub mod repair_log;
 pub mod service_item;
 pub mod service_order;
 pub mod stock;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
+import React, { useEffect, useState, use, useRef } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -18,8 +18,12 @@ import {
     Package,
     Send,
     ThumbsUp,
-    CreditCard
+    CreditCard,
+    Camera,
+    ImageIcon,
+    FileText
 } from "lucide-react";
+import ReceiptModal from "@/components/ReceiptModal";
 
 interface ServiceItem {
     id: number;
@@ -30,10 +34,12 @@ interface ServiceItem {
 
 interface ServiceOrder {
     id: number;
-    bike_id: number | null;
+    bike_id?: number | null;
     customer_id: number;
     status: string;
     total_price: number;
+    before_picture_url?: string;
+    after_picture_url?: string;
     items: ServiceItem[];
 }
 
@@ -50,6 +56,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     const [stockItems, setStockItems] = useState<{ id: number; name: string; price: number; quantity: number }[]>([]);
     const [selectedStockId, setSelectedStockId] = useState<string>("");
     const [isUsingStock, setIsUsingStock] = useState(false);
+    const [selectedReceipt, setSelectedReceipt] = useState<ServiceOrder | null>(null);
+    const [isUploading, setIsUploading] = useState<"before" | "after" | null>(null);
+    const beforeInputRef = useRef<HTMLInputElement>(null);
+    const afterInputRef = useRef<HTMLInputElement>(null);
 
     const fetchOrderDetail = async () => {
         try {
@@ -159,6 +169,65 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         }
     };
 
+    const handleUpdatePhotos = async (before_url?: string, after_url?: string) => {
+        try {
+            await apiFetch("/api/orders/photos", {
+                method: "POST",
+                body: JSON.stringify({
+                    order_id: parseInt(resolvedParams.id),
+                    before_picture_url: before_url,
+                    after_picture_url: after_url
+                }),
+            });
+            showToast("Order record updated", "success");
+            fetchOrderDetail();
+        } catch (err: unknown) {
+            showToast((err as Error).message || "Failed to update photos", "error");
+        }
+    };
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: "before" | "after") => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Simple validation
+        if (!file.type.startsWith("image/")) {
+            showToast("Please upload an image file", "error");
+            return;
+        }
+
+        setIsUploading(type);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const result = await apiFetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (result && result.url) {
+                // Prepend base URL if needed, but if it starts with /uploads/ it's relative to the server
+                // The server serves from /uploads, so /uploads/filename is correct if the frontend is on the same host
+                // or if we use the full API URL.
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+                const fullUrl = `${apiUrl}${result.url}`;
+
+                if (type === "before") {
+                    await handleUpdatePhotos(fullUrl, order?.after_picture_url);
+                } else {
+                    await handleUpdatePhotos(order?.before_picture_url, fullUrl);
+                }
+                showToast(`${type === "before" ? "Before" : "After"} photo uploaded!`, "success");
+            }
+        } catch (err: unknown) {
+            showToast((err as Error).message || "Upload failed", "error");
+        } finally {
+            setIsUploading(null);
+            if (event.target) event.target.value = "";
+        }
+    };
+
     const handleComplete = () => {
         if (!order) return;
         const total = order.items.reduce((sum, item) => sum + item.price, 0);
@@ -248,6 +317,92 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     </div>
                                 </div>
 
+                                {/* Photo Uploads (Before & After) */}
+                                <div className="pt-8 border-t border-slate-50 space-y-6">
+                                    <div className="flex items-center gap-3">
+                                        <Camera className="text-[#004B7E]" size={20} />
+                                        <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Repair Visual Documentation</h3>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Before Picture */}
+                                        <div className="space-y-4">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Before Repair</p>
+                                            <div className="aspect-video bg-slate-50 rounded-3xl overflow-hidden border border-slate-100 group/img relative">
+                                                {order.before_picture_url ? (
+                                                    <img src={order.before_picture_url} alt="Before" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
+                                                        <ImageIcon size={40} />
+                                                        <p className="text-[10px] mt-2 uppercase font-black">No image available</p>
+                                                    </div>
+                                                )}
+                                                {(isMechanic || isAdmin) && (
+                                                    <div className="absolute inset-0 bg-[#004B7E]/60 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 gap-2">
+                                                        <input
+                                                            type="file"
+                                                            ref={beforeInputRef}
+                                                            onChange={(e) => handleFileUpload(e, "before")}
+                                                            className="hidden"
+                                                            accept="image/*"
+                                                        />
+                                                        <button
+                                                            onClick={() => beforeInputRef.current?.click()}
+                                                            disabled={isUploading !== null}
+                                                            className="px-4 py-2 bg-white text-[#004B7E] rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:scale-105 transition-all flex items-center gap-2"
+                                                        >
+                                                            {isUploading === "before" ? (
+                                                                <div className="w-3 h-3 border-2 border-[#004B7E]/20 border-t-[#004B7E] rounded-full animate-spin"></div>
+                                                            ) : (
+                                                                <Camera size={14} />
+                                                            )}
+                                                            {order.before_picture_url ? "Replace Photo" : "Upload Photo"}
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* After Picture */}
+                                        <div className="space-y-4">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">After Repair</p>
+                                            <div className="aspect-video bg-slate-50 rounded-3xl overflow-hidden border border-slate-100 group/img relative">
+                                                {order.after_picture_url ? (
+                                                    <img src={order.after_picture_url} alt="After" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
+                                                        <ImageIcon size={40} />
+                                                        <p className="text-[10px] mt-2 uppercase font-black">No image available</p>
+                                                    </div>
+                                                )}
+                                                {(isMechanic || isAdmin) && (
+                                                    <div className="absolute inset-0 bg-[#004B7E]/60 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 gap-2">
+                                                        <input
+                                                            type="file"
+                                                            ref={afterInputRef}
+                                                            onChange={(e) => handleFileUpload(e, "after")}
+                                                            className="hidden"
+                                                            accept="image/*"
+                                                        />
+                                                        <button
+                                                            onClick={() => afterInputRef.current?.click()}
+                                                            disabled={isUploading !== null}
+                                                            className="px-4 py-2 bg-white text-[#004B7E] rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:scale-105 transition-all flex items-center gap-2"
+                                                        >
+                                                            {isUploading === "after" ? (
+                                                                <div className="w-3 h-3 border-2 border-[#004B7E]/20 border-t-[#004B7E] rounded-full animate-spin"></div>
+                                                            ) : (
+                                                                <Camera size={14} />
+                                                            )}
+                                                            {order.after_picture_url ? "Replace Photo" : "Upload Photo"}
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* Status Actions */}
                                 <div className="flex flex-wrap gap-3 pt-8 border-t border-slate-50">
                                     {isMechanic && order.status === "Booked" && (
@@ -300,6 +455,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 Cancel Order
                                             </button>
                                         </div>
+                                    )}
+                                    {order.status === "Paid" && (
+                                        <button
+                                            onClick={() => setSelectedReceipt(order)}
+                                            className="px-6 py-3 bg-slate-800 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-black transition-all flex items-center gap-2"
+                                        >
+                                            <FileText size={14} />
+                                            View Receipt
+                                        </button>
                                     )}
                                     {(isMechanic || isAdmin) && order.status === "Repairing" && (
                                         <button
@@ -409,6 +573,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     </div>
                 </div>
             </div>
+
+            {selectedReceipt && (
+                <ReceiptModal
+                    order={selectedReceipt}
+                    onClose={() => setSelectedReceipt(null)}
+                />
+            )}
         </DashboardLayout>
     );
 }

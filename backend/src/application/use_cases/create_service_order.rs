@@ -98,6 +98,8 @@ impl CreateServiceOrderUseCase {
             total_price: 0.0,
             items: Vec::new(),
             created_at: Some(chrono::Utc::now()),
+            before_picture_url: None,
+            after_picture_url: None,
         };
 
         let created_order = self

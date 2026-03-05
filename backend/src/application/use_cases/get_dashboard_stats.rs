@@ -12,6 +12,14 @@ pub struct DashboardStatsResult {
     pub total_users: usize,
     pub status_distribution: HashMap<String, usize>,
     pub brand_distribution: HashMap<String, usize>,
+    pub daily_stats: Vec<DailyStat>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DailyStat {
+    pub date: String,
+    pub order_count: usize,
+    pub revenue: f64,
 }
 
 #[derive(Clone)]
@@ -59,10 +67,20 @@ impl GetDashboardStatsUseCase {
         let mut total_revenue = 0.0;
         let mut status_distribution = HashMap::new();
         let mut brand_distribution = HashMap::new();
+        let mut daily_map: HashMap<String, (usize, f64)> = HashMap::new();
 
         for order in &orders {
+            let date_key = order
+                .created_at
+                .map(|dt| dt.format("%Y-%m-%d").to_string())
+                .unwrap_or_else(|| "Unknown".to_string());
+
+            let day_entry = daily_map.entry(date_key).or_insert((0, 0.0));
+            day_entry.0 += 1;
+
             if order.status == OrderStatus::Paid {
                 total_revenue += order.total_price;
+                day_entry.1 += order.total_price;
             }
 
             let status_key = format!("{:?}", order.status);
@@ -73,12 +91,25 @@ impl GetDashboardStatsUseCase {
             *brand_distribution.entry(bike.brand).or_insert(0) += 1;
         }
 
+        let mut daily_stats: Vec<DailyStat> = daily_map
+            .into_iter()
+            .map(|(date, (order_count, revenue))| DailyStat {
+                date,
+                order_count,
+                revenue,
+            })
+            .collect();
+
+        // Sort by date ascending
+        daily_stats.sort_by(|a, b| a.date.cmp(&b.date));
+
         Ok(DashboardStatsResult {
             total_revenue,
             total_orders: orders.len(),
             total_users: users.len(),
             status_distribution,
             brand_distribution,
+            daily_stats,
         })
     }
 }

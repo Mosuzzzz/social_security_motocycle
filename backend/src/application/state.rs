@@ -2,6 +2,7 @@ use crate::application::use_cases::add_service_item::AddServiceItemUseCase;
 use crate::application::use_cases::add_stock_item::AddStockItemUseCase;
 use crate::application::use_cases::connect_line::ConnectLineUseCase;
 use crate::application::use_cases::create_service_order::CreateServiceOrderUseCase;
+use crate::application::use_cases::delete_feedback::DeleteFeedbackUseCase;
 use crate::application::use_cases::delete_service_order::DeleteServiceOrderUseCase;
 use crate::application::use_cases::delete_stock_item::DeleteStockItemUseCase;
 use crate::application::use_cases::disconnect_line::DisconnectLineUseCase;
@@ -19,6 +20,7 @@ use crate::application::use_cases::promote_user::PromoteUserUseCase;
 use crate::application::use_cases::refresh_token::RefreshTokenUseCase;
 use crate::application::use_cases::register_user::RegisterUserUseCase;
 use crate::application::use_cases::submit_feedback::SubmitFeedbackUseCase;
+use crate::application::use_cases::update_order_photos::UpdateOrderPhotosUseCase;
 use crate::application::use_cases::update_order_status::UpdateOrderStatusUseCase;
 use crate::application::use_cases::update_profile::UpdateProfileUseCase;
 use crate::application::use_cases::update_stock_item::UpdateStockItemUseCase;
@@ -28,6 +30,7 @@ use crate::infrastructure::security::jwt::service::JwtService;
 pub struct AppState {
     pub submit_feedback_use_case: SubmitFeedbackUseCase,
     pub list_feedbacks_use_case: ListFeedbacksUseCase,
+    pub delete_feedback_use_case: DeleteFeedbackUseCase,
     pub register_user_use_case: RegisterUserUseCase,
 
     pub promote_user_use_case: PromoteUserUseCase,
@@ -51,6 +54,7 @@ pub struct AppState {
     pub update_stock_item_use_case: UpdateStockItemUseCase,
     pub delete_stock_item_use_case: DeleteStockItemUseCase,
     pub update_profile_use_case: UpdateProfileUseCase,
+    pub update_order_photos_use_case: UpdateOrderPhotosUseCase,
     pub list_notifications_use_case:
         crate::application::use_cases::list_notifications::ListNotificationsUseCase,
     pub mark_notification_read_use_case:

@@ -11,3 +11,7 @@ motorcycle_api_collection.json
 backend/truncate_data.sql
 SERVICE_ORDER_WORKFLOW.md
 MECHANIC_FEATURES.md
+frontend/Dockerfile
+frontend/.dockerignore
+backend/Dockerfile
+backend/.dockerignore

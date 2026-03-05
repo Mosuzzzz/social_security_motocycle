@@ -56,6 +56,8 @@ pub struct ServiceOrderModel {
     pub total_price: bigdecimal::BigDecimal, // Diesel uses BigDecimal for Numeric
     pub created_by: i32,
     pub created_at: chrono::DateTime<chrono::Utc>,
+    pub before_picture_url: Option<String>,
+    pub after_picture_url: Option<String>,
 }
 
 #[derive(Insertable)]
@@ -66,6 +68,8 @@ pub struct NewServiceOrder {
     pub status: ServiceOrderStatusEnum,
     pub total_price: bigdecimal::BigDecimal,
     pub created_by: i32,
+    pub before_picture_url: Option<String>,
+    pub after_picture_url: Option<String>,
 }
 #[derive(Queryable, Selectable, Debug, Clone, Serialize, Deserialize)]
 #[diesel(table_name = crate::infrastructure::db::schema::motorcycles)]

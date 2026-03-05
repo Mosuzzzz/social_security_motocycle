@@ -8,7 +8,7 @@ interface ReceiptProps {
         id: number;
         status: string;
         total_price: number;
-        bike_id?: number;
+        bike_id?: number | null;
     };
     onClose: () => void;
 }

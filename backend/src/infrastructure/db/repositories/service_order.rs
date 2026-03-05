@@ -43,6 +43,8 @@ impl ServiceOrderRepository {
             status: status_enum,
             total_price,
             created_by: creator_id,
+            before_picture_url: order.before_picture_url,
+            after_picture_url: order.after_picture_url,
         };
 
         let result = diesel::insert_into(service_orders::table)
@@ -114,8 +116,8 @@ impl ServiceOrderRepository {
             .set((
                 service_orders::status.eq(status_enum),
                 service_orders::total_price.eq(total_price),
-                // Bike and Customer usually don't change for an order, but if needed we can add them.
-                // Assuming status and price are main updatable fields.
+                service_orders::before_picture_url.eq(order.before_picture_url),
+                service_orders::after_picture_url.eq(order.after_picture_url),
             ))
             .returning(ServiceOrderModel::as_returning())
             .get_result::<ServiceOrderModel>(&mut conn)
@@ -200,6 +202,8 @@ impl ServiceOrderRepository {
             total_price,
             items: Vec::new(),
             created_at: Some(model.created_at),
+            before_picture_url: model.before_picture_url,
+            after_picture_url: model.after_picture_url,
         }
     }
 }

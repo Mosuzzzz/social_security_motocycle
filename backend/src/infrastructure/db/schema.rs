@@ -130,6 +130,8 @@ diesel::table! {
         total_price -> Numeric,
         created_by -> Int4,
         created_at -> Timestamptz,
+        before_picture_url -> Nullable<Text>,
+        after_picture_url -> Nullable<Text>,
     }
 }
 

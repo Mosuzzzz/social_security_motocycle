@@ -9,6 +9,7 @@ use crate::application::use_cases::promote_user::PromoteUserCommand;
 use crate::application::use_cases::refresh_token::RefreshTokenCommand;
 use crate::application::use_cases::register_user::RegisterUserCommand;
 use crate::application::use_cases::submit_feedback::SubmitFeedbackCommand;
+use crate::application::use_cases::update_order_photos::UpdateOrderPhotosCommand;
 use crate::application::use_cases::update_order_status::UpdateOrderStatusCommand;
 use crate::application::use_cases::update_profile::UpdateProfileCommand;
 use crate::application::use_cases::update_stock_item::UpdateStockItemCommand;
@@ -18,13 +19,14 @@ use crate::domain::user::entity::Role;
 use crate::infrastructure::http::middleware::auth::AuthUser;
 use axum::{
     Router,
-    extract::{Json, Query, State},
+    extract::{Json, Multipart, Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, post},
 };
 use serde::Serialize;
 use std::sync::Arc;
+use tower_http::services::ServeDir;
 
 #[derive(Serialize)]
 pub struct ErrorResponse {
@@ -144,6 +146,25 @@ async fn list_feedbacks(State(state): State<Arc<AppState>>, user: AuthUser) -> i
     }
 }
 
+async fn delete_feedback(
+    State(state): State<Arc<AppState>>,
+    user: AuthUser,
+    axum::extract::Path(id): axum::extract::Path<i32>,
+) -> impl IntoResponse {
+    if user.role != Role::Admin {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(ErrorResponse::from("Only admins can delete feedback")),
+        )
+            .into_response();
+    }
+
+    match state.delete_feedback_use_case.execute(id).await {
+        Ok(_) => StatusCode::NO_CONTENT.into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, Json(ErrorResponse::from(e))).into_response(),
+    }
+}
+
 async fn create_service_order(
     State(state): State<Arc<AppState>>,
     user: AuthUser,
@@ -250,6 +271,27 @@ async fn update_order_status(
         .await
     {
         Ok(result) => (StatusCode::OK, Json(result)).into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, Json(ErrorResponse::from(e))).into_response(),
+    }
+}
+
+async fn update_order_photos(
+    State(state): State<Arc<AppState>>,
+    user: AuthUser,
+    Json(payload): Json<UpdateOrderPhotosCommand>,
+) -> impl IntoResponse {
+    if user.role != Role::Mechanic && user.role != Role::Admin {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(ErrorResponse::from(
+                "Only mechanics or admins can update photos",
+            )),
+        )
+            .into_response();
+    }
+
+    match state.update_order_photos_use_case.execute(payload).await {
+        Ok(_) => StatusCode::OK.into_response(),
         Err(e) => (StatusCode::BAD_REQUEST, Json(ErrorResponse::from(e))).into_response(),
     }
 }
@@ -449,6 +491,79 @@ async fn add_service_item(
     }
 }
 
+async fn upload_file(mut multipart: Multipart) -> impl IntoResponse {
+    let mut file_url = String::new();
+
+    while let Ok(Some(field)) = multipart.next_field().await {
+        let name = field.name().unwrap_or("file").to_string();
+        if name == "file" {
+            let file_name = field.file_name().unwrap_or("upload.jpg").to_string();
+            let content_type = field.content_type().unwrap_or("image/jpeg").to_string();
+
+            // Validate content type is image
+            if !content_type.starts_with("image/") {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(ErrorResponse::from("Only image files are allowed")),
+                )
+                    .into_response();
+            }
+
+            let data = match field.bytes().await {
+                Ok(data) => data,
+                Err(e) => {
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        Json(ErrorResponse::from(format!("Failed to read file: {}", e))),
+                    )
+                        .into_response();
+                }
+            };
+
+            let extension = std::path::Path::new(&file_name)
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .unwrap_or("jpg");
+
+            let new_filename = format!("{}.{}", uuid::Uuid::new_v4(), extension);
+            let upload_dir = "uploads";
+
+            if let Err(e) = std::fs::create_dir_all(upload_dir) {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse::from(format!(
+                        "Failed to create upload directory: {}",
+                        e
+                    ))),
+                )
+                    .into_response();
+            }
+
+            let path = std::path::Path::new(upload_dir).join(&new_filename);
+            if let Err(e) = std::fs::write(&path, data) {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse::from(format!("Failed to save file: {}", e))),
+                )
+                    .into_response();
+            }
+
+            file_url = format!("/uploads/{}", new_filename);
+            break; // Currently only handles one file
+        }
+    }
+
+    if file_url.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse::from("No file provided")),
+        )
+            .into_response();
+    }
+
+    (StatusCode::OK, Json(serde_json::json!({ "url": file_url }))).into_response()
+}
+
 // Router
 
 async fn add_stock_item(
@@ -584,6 +699,7 @@ pub fn create_router() -> Router<Arc<AppState>> {
         .route("/auth/refresh", post(refresh_token))
         .route("/auth/logout", post(logout))
         .route("/feedback", post(submit_feedback))
+        .route("/upload", post(upload_file))
         .route("/ping", get(|| async { "pong" }));
 
     // Protected API routes
@@ -599,6 +715,7 @@ pub fn create_router() -> Router<Arc<AppState>> {
             "/orders/{id}",
             get(get_service_order_detail).delete(delete_service_order),
         )
+        .route("/orders/photos", post(update_order_photos))
         .route("/orders/items", post(add_service_item))
         .route("/orders/use-stock", post(use_stock_item))
         .route(
@@ -609,6 +726,7 @@ pub fn create_router() -> Router<Arc<AppState>> {
         )
         .route("/stock/{id}", delete(delete_stock_item))
         .route("/feedback", get(list_feedbacks))
+        .route("/feedback/{id}", delete(delete_feedback))
         .route("/payments", post(process_payment))
         .route("/users", get(list_users))
         .route("/stats", get(get_dashboard_stats))
@@ -619,5 +737,7 @@ pub fn create_router() -> Router<Arc<AppState>> {
         .route("/line/disconnect", post(disconnect_line))
         .layer(auth_middleware);
 
-    Router::new().nest("/api", public_routes.merge(protected_routes))
+    Router::new()
+        .nest("/api", public_routes.merge(protected_routes))
+        .nest_service("/uploads", ServeDir::new("uploads"))
 }

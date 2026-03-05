@@ -38,4 +38,15 @@ impl FeedbackRepository {
 
         Ok(results)
     }
+
+    pub async fn delete_feedback(&self, id: i32) -> Result<(), String> {
+        use crate::infrastructure::db::schema::feedbacks::dsl::*;
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+
+        diesel::delete(feedbacks.filter(feedback_id.eq(id)))
+            .execute(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        Ok(())
+    }
 }

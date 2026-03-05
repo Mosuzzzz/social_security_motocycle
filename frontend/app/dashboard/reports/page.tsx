@@ -15,12 +15,19 @@ import {
     BarChart3
 } from "lucide-react";
 
+interface DailyStat {
+    date: string;
+    order_count: number;
+    revenue: number;
+}
+
 interface Stats {
     total_revenue: number;
     total_orders: number;
     total_users: number;
     status_distribution: Record<string, number>;
     brand_distribution: Record<string, number>;
+    daily_stats: DailyStat[];
 }
 
 export default function ReportsPage() {
@@ -102,6 +109,11 @@ export default function ReportsPage() {
 
                                 Object.entries(stats.status_distribution).forEach(([status, count]) => {
                                     csvContent += `Order Status Breakdown,${status},${count}\n`;
+                                });
+
+                                csvContent += "\nDaily Statistics,Date,Order Count,Revenue\n";
+                                stats.daily_stats.forEach(stat => {
+                                    csvContent += `Daily Stats,${stat.date},${stat.order_count},${stat.revenue}\n`;
                                 });
 
                                 const encodedUri = encodeURI(csvContent);
@@ -202,6 +214,54 @@ export default function ReportsPage() {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* Daily Statistics */}
+                <div className="p-10 bg-white border border-slate-100 rounded-4xl space-y-10 shadow-xl">
+                    <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                            <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Daily Revenue & Activity</h3>
+                            <p className="text-slate-400 font-bold text-sm">
+                                {stats && stats.daily_stats.length > 0 ? (
+                                    <>Busiest day: <span className="text-[#007AFF]">{new Date(stats.daily_stats.reduce((prev, current) => (prev.order_count > current.order_count) ? prev : current).date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span></>
+                                ) : (
+                                    "Performance tracking over the selected period"
+                                )}
+                            </p>
+                        </div>
+                        <BarChart3 className="text-slate-300" />
+                    </div>
+
+                    <div className="h-64 flex items-end gap-2 pt-10">
+                        {stats && stats.daily_stats.length > 0 ? (
+                            stats.daily_stats.map((stat, idx) => {
+                                const maxRevenue = Math.max(...stats.daily_stats.map(s => s.revenue), 100);
+                                const height = (stat.revenue / maxRevenue) * 100;
+                                return (
+                                    <div key={idx} className="flex-1 group relative flex flex-col items-center">
+                                        <div
+                                            className="w-full bg-linear-to-t from-[#004B7E] to-[#007AFF] rounded-t-lg transition-all duration-500 hover:brightness-110"
+                                            style={{ height: `${height}%` }}
+                                        >
+                                            {/* Tooltip */}
+                                            <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
+                                                <div className="bg-slate-900 text-white text-[10px] font-black py-2 px-3 rounded-xl whitespace-nowrap shadow-2xl">
+                                                    ฿{stat.revenue.toLocaleString()} • {stat.order_count} orders
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mt-4 rotate-45 origin-left">
+                                            {new Date(stat.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-slate-100 rounded-3xl text-slate-300 font-black uppercase text-xs">
+                                No activity recorded for this period
+                            </div>
+                        )}
                     </div>
                 </div>
 
